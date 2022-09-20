@@ -56,19 +56,18 @@ uint64_t summ = 0;
 uint64_t count = 0;
 void loop()
 {
-  tft.setCursor(0, 16);
-  tft.setTextSize(2);
-  tft.setTextColor(GREEN, BLACK);
-
-  while (0)
+  while (1)
   {
     soft_updates();
     menue.current = menue.current->update(); //
     menue.current->renderSubmenues();        //
   }
 
-  uint8_t ch = 0;
+  tft.setCursor(0, 16);
+  tft.setTextSize(2);
+  tft.setTextColor(GREEN, BLACK);
 
+  uint8_t ch = 0;
   while (1)
   {
     time1 = micros();
