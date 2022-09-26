@@ -118,6 +118,8 @@ void writeCommand16(uint16_t cmd);
 
 void ST7735_displayInit(const uint8_t *addr);
 
+void disable_queue();
+
 void ST7735_pixel_to_queue(int16_t x, int16_t y, uint16_t color);
 void ST7735_Rect_to_queue(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 void ST7735_buff_to_queue(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *color);

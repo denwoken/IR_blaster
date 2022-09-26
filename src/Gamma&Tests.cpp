@@ -231,6 +231,7 @@ void Gamma_app(menueItem *item, void *ptr)
     ST7735_displayInit(GMCTRN1);
     // draw_settings();
     system_soft_wdt_feed();
+    tft.Renderer();
   }
 
   save_settings();
@@ -246,10 +247,7 @@ void PixelSpeedTest_app(menueItem *item, void *ptr)
 {
   // item->renderTitle();
   forcedQuickUpdate();
-  tft.setCursor(0, 9);
-  tft.setTextSize(1);
-  tft.setTextColor(GREEN, BLACK);
-  tft.print("pixels per\nsecond:");
+
   uint32_t time;
 
   while (1)
@@ -258,16 +256,22 @@ void PixelSpeedTest_app(menueItem *item, void *ptr)
     if (L_but->isClick())
       break;
     wait_queue_to_empty();
-    time = WDEV_NOW();
-    for (uint16_t i = 0; i < 10000; i++)
-      tft.writePixel(Random(0, 127), Random(26, 159), Random_16());
 
+    time = WDEV_NOW();
+    tft.Renderer();
+    tft.Clear();
+    for (uint16_t i = 0; i < 10000; i++)
+      tft.writePixel(Random(0, 127), Random(26, 151), Random_16());
     wait_queue_to_empty();
     time = WDEV_NOW() - time;
+
     tft.setCursor(42, 17);
     tft.setTextColor(GREEN, BLACK);
     tft.printU(10000000000 / time, 6);
-    system_soft_wdt_feed();
+
+    tft.setCursor(0, 9);
+    tft.setTextSize(1);
+    tft.print("pixels per\nsecond:");
   }
 }
 
@@ -279,13 +283,6 @@ void RectSpeedTest_app(menueItem *item, void *ptr)
 {
   uint32_t option = reinterpret_cast<uint32_t>(ptr);
   forcedQuickUpdate();
-  tft.setCursor(0, 9);
-  tft.setTextSize(1);
-  tft.setTextColor(GREEN, BLACK);
-  if (option)
-    tft.print("25x25 rects per\nsecond:");
-  else
-    tft.print("random rects per\nsecond:");
 
   uint32_t time;
   while (1)
@@ -294,7 +291,10 @@ void RectSpeedTest_app(menueItem *item, void *ptr)
     if (L_but->isClick())
       break;
     wait_queue_to_empty();
+
     time = WDEV_NOW();
+    tft.Renderer();
+    tft.Clear();
     for (uint16_t i = 0; i < 300; i++)
     {
       int16_t w, h;
@@ -308,14 +308,21 @@ void RectSpeedTest_app(menueItem *item, void *ptr)
         w = Random(5, 100);
         h = Random(5, 100);
       }
-      tft.writeFillRectPreclipped(Random(0, 127 - w), Random(26, 159 - h), w, h, Random_16());
+      tft.writeFillRectPreclipped(Random(0, 127 - w), Random(26, 151 - h), w, h, Random_16());
     }
     wait_queue_to_empty();
     time = WDEV_NOW() - time; // sum_time +=
+
     tft.setCursor(42, 17);
     tft.setTextColor(GREEN, BLACK);
     tft.printU(300000000 / time, 6);
-    system_soft_wdt_feed();
+
+    tft.setCursor(0, 9);
+    tft.setTextSize(1);
+    if (option)
+      tft.print("25x25 rects per\nsecond:");
+    else
+      tft.print("random rects per\nsecond:");
   }
 }
 
@@ -323,13 +330,14 @@ void ChipInfo_app(menueItem *item, void *ptr)
 {
   tft.setRotation(3);
   forcedQuickUpdate();
-  item->renderTitle();
 
   while (1)
   {
     soft_updates();
     if (L_but->isClick())
       break;
+
+    item->renderTitle();
 
     tft.setCursor(0, 25);
     tft.setTextSize(1);
@@ -347,22 +355,12 @@ void ChipInfo_app(menueItem *item, void *ptr)
     // tft.print("Flash size map = "); tft.print((int32_t)system_get_flash_size_map(),3); tft.print("Mbyte\n");
 
     system_soft_wdt_feed();
+    tft.Renderer();
+    tft.Clear();
   }
 
   tft.setRotation(0);
 }
-
-/*
-os_printf("SDK version: %s\n", system_get_sdk_version());
-os_printf("Version info of boot: %d\n", system_get_boot_version());
-os_printf("Userbin address: 0x%x\n", system_get_userbin_addr());
-os_printf("Time = %ld\r\n", system_get_time());
-os_printf("RTC time = %ld\r\n", system_get_rtc_time());
-os_printf("Chip id = 0x%x\r\n", system_get_chip_id());
-os_printf("CPU freq = %d MHz\r\n", system_get_cpu_freq());
-os_printf("Flash size map = %d\r\n", system_get_flash_size_map());
-os_printf("Free heap size = %d\r\n", system_get_free_heap_size());
-*/
 
 void CharSpeedTest2_app(menueItem *item, void *ptr)
 {
@@ -372,14 +370,6 @@ void CharSpeedTest1_app(menueItem *item, void *ptr)
 {
   const uint32_t option = reinterpret_cast<uint32_t>(ptr);
   forcedQuickUpdate();
-  tft.setCursor(0, 9);
-  tft.setTextSize(1);
-  tft.setTextColor(GREEN, BLACK);
-
-  if (option)
-    tft.print("ASCII symbols 10x14\nper second:");
-  else
-    tft.print("ASCII symbols 5x7\nper second:");
 
   uint32_t time;
   while (1)
@@ -387,18 +377,26 @@ void CharSpeedTest1_app(menueItem *item, void *ptr)
     soft_updates();
     if (L_but->isClick())
       break;
-
     wait_queue_to_empty();
+
     time = WDEV_NOW();
-    // for (uint8_t j = 0; j < 100; j++)
+    tft.Renderer();
+    tft.Clear();
+    //  for (uint8_t j = 0; j < 100; j++)
     for (uint8_t i = 0; i != 255; i++)
-      tft.drawChar(Random(0, 122 - option * 6), Random(25, 152 - option * 8), i, Random_16(), BLACK, option + 1);
+      tft.drawChar(Random(0, 122 - option * 6), Random(25, 151 - option * 8), i, Random_16(), BLACK, option + 1);
     wait_queue_to_empty();
     time = WDEV_NOW() - time;
 
     tft.setCursor(66, 17);
     tft.setTextColor(GREEN, BLACK);
     tft.printU(255000000 / time, 6);
-    system_soft_wdt_feed();
+
+    tft.setCursor(0, 9);
+    tft.setTextSize(1);
+    if (option)
+      tft.print("ASCII symbols 10x14\nper second:");
+    else
+      tft.print("ASCII symbols 5x7\nper second:");
   }
 }

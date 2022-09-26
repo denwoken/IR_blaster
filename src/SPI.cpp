@@ -276,7 +276,7 @@ void write2Bytes_(uint16_t color, uint16_t size)
 {
     while (SPI1CMD & SPIBUSY)
         asm volatile("NOP\n");
-    ;
+
     setDataBits(size * 16);
     for (uint16_t i = 0; i < size; i++)
     { //////////////////////////////// 3uS

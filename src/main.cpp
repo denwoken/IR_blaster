@@ -25,6 +25,9 @@ extern Button *T_but;
 #include "FlashOptions.h"
 #include "Init_menue.h"
 extern struct menuelist menue;
+
+//#include "LittleFS.h"
+
 void setup()
 {
 
@@ -34,7 +37,7 @@ void setup()
   init_global_options();
 
   tft.init();
-  tft.setSPISpeed(40 * 1000 * 1000);
+  apply_system_settings();
   tft.fillScreen(0);
   //  Image565 image = Image565(image_Win1, 128, 156);
   //  image.AllocRAM();
@@ -61,6 +64,8 @@ void loop()
     soft_updates();
     menue.current = menue.current->update(); //
     menue.current->renderSubmenues();        //
+    tft.Renderer();
+    tft.Clear();
   }
 
   tft.setCursor(0, 16);
