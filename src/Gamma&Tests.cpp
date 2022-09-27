@@ -382,7 +382,6 @@ void CharSpeedTest1_app(menueItem *item, void *ptr)
     time = WDEV_NOW();
     tft.Renderer();
     tft.Clear();
-    //  for (uint8_t j = 0; j < 100; j++)
     for (uint8_t i = 0; i != 255; i++)
       tft.drawChar(Random(0, 122 - option * 6), Random(25, 151 - option * 8), i, Random_16(), BLACK, option + 1);
     wait_queue_to_empty();
@@ -400,3 +399,7 @@ void CharSpeedTest1_app(menueItem *item, void *ptr)
       tft.print("ASCII symbols 5x7\nper second:");
   }
 }
+
+// void WriteLineSpeedTest_app(menueItem *item, void *ptr){
+
+//}

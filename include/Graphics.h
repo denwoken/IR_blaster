@@ -2,7 +2,6 @@
 #pragma once
 
 #include "Arduino.h"
-#include "Vectors.h"
 #include "ST7735.h"
 //#include <ets_sys.h>
 #include "Image565.h"

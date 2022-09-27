@@ -1,4 +1,5 @@
 
+#include "Arduino.h"
 
 #include "ST7735.h"
 #include "Graphics.h"
@@ -21,7 +22,7 @@ extern Button *T_but;
 
 #include "Pictures.h"
 #include "Image565.h"
-#define STOP delay(100000);
+
 #include "FlashOptions.h"
 #include "Init_menue.h"
 extern struct menuelist menue;
@@ -30,8 +31,8 @@ extern struct menuelist menue;
 
 void setup()
 {
-
   Serial.begin(1000000);
+
   pinMode(16, OUTPUT);
   digitalWrite(16, 0);
   init_global_options();

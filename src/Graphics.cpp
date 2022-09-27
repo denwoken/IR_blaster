@@ -702,10 +702,12 @@ void Graphics::printf(const char *format, ...)
           uint8_t integer, fractional;
           double data = va_arg(factor, double);
           integer = str_to_num(str);
-          char *str1 = str + int_offset; //
+          char *str1 = str + int_offset - 1; // Mistake!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          if (*str1 == '.')                  // Mistake!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            str1++;
           fractional = str_to_num(str1);
-          /*Serial.printf("%d %d\n", integer, fractional);
-          Serial.printf("-- %s  %s\n", str, str1);*/
+          /* Serial.printf("%d %d\n", integer, fractional);
+          Serial.printf("--|%s|%s|\n", str, str1);*/
           print(data, integer, fractional);
         }
         break;
