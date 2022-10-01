@@ -6,9 +6,10 @@
 
 #ifndef _GFXFONT_H_
 #define _GFXFONT_H_
-
+#include "Arduino.h"
 /// Font data stored PER GLYPH
-typedef struct {
+typedef struct
+{
   uint16_t bitmapOffset; ///< Pointer into GFXfont->bitmap
   uint8_t width;         ///< Bitmap dimensions in pixels
   uint8_t height;        ///< Bitmap dimensions in pixels
@@ -18,7 +19,8 @@ typedef struct {
 } GFXglyph;
 
 /// Data stored for FONT AS A WHOLE
-typedef struct {
+typedef struct
+{
   uint8_t *bitmap;  ///< Glyph bitmaps, concatenated
   GFXglyph *glyph;  ///< Glyph array
   uint16_t first;   ///< ASCII extents (first char)

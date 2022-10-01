@@ -1,10 +1,10 @@
 #include "Arduino.h"
-#include "Gamma&Tests.h"
+#include "Apps/Gamma&Tests.h"
 
-#include "Flash_apps.h"
-#include "Init_menue.h"
+#include "Apps/Flash_apps.h"
+#include "Menue/Init_menue.h"
 #include "FlashOptions.h"
-#include "Vertex_Graphics_apps.h"
+#include "Apps/Vertex_Graphics_apps.h"
 
 #include "FlashOptions.h"
 extern Global_options Gl_options;
@@ -38,7 +38,10 @@ void init_menue()
     menue.Tetris = new menueItem();
     menue.Snake = new menueItem();
     menue.VertexGraph = new menueItem();
-    menue.Render_cube = new menueItem();
+    menue.Render_cube_skeleton = new menueItem();
+    menue.Render_cube_light = new menueItem();
+    menue.Render_cube_texture = new menueItem();
+    menue.Render_cube_free_camera = new menueItem();
     menue.IR = new menueItem();
     menue.IR_Comm_List = new menueItem();
     menue.IR_Receive_Comm = new menueItem();
@@ -74,7 +77,10 @@ void init_menue()
     menue.Games->Add(menue.Tetris);
     menue.Games->Add(menue.Snake);
     menue.Games->Add(menue.VertexGraph);
-    menue.VertexGraph->Add(menue.Render_cube);
+    menue.VertexGraph->Add(menue.Render_cube_skeleton);
+    menue.VertexGraph->Add(menue.Render_cube_light);
+    menue.VertexGraph->Add(menue.Render_cube_texture);
+    menue.VertexGraph->Add(menue.Render_cube_free_camera);
 
     menue.main->Add(menue.IR);
     menue.IR->Add(menue.IR_Comm_List);
@@ -91,7 +97,7 @@ void init_menue()
 
     menue.main->Add(menue.WIFI);
   }
-  Serial.printf("heap :%d \n", system_get_free_heap_size());
+
   {
     menue.main->SetTitle("Main", GREEN);
 
@@ -114,7 +120,10 @@ void init_menue()
     menue.Tetris->SetTitle("Tetris", GREEN);
     menue.Snake->SetTitle("Snake", GREEN);
     menue.VertexGraph->SetTitle("Vertex Graphics", GREEN);
-    menue.Render_cube->SetTitle("Render cube", GREEN);
+    menue.Render_cube_skeleton->SetTitle("cube skeleton", GREEN);
+    menue.Render_cube_light->SetTitle("cube light", GREEN);
+    menue.Render_cube_texture->SetTitle("cube texture", GREEN);
+    menue.Render_cube_free_camera->SetTitle("cube free camera", GREEN);
 
     menue.IR->SetTitle("IR", GREEN);
     menue.IR_Comm_List->SetTitle("IR Comm List", GREEN);
@@ -135,7 +144,7 @@ void init_menue()
   menue.bat_voltage->SetTextContext("", "V", 0);
   menue.bat_voltage->SetDataContext(0, 2, -3, NULL);
 
-  menue.buffering->SetTextContext("none  \0single\0double", "", 3);
+  menue.buffering->SetTextContext("none     \0single 16\0double 8 ", "", 3);
   menue.buffering->SetDataContext(0, 2, 1, &Gl_options.buffering);
   menue.SPI_speed->SetTextContext("", "MHz", 0);
   menue.SPI_speed->SetDataContext(1, 80, 1, &Gl_options.SPI_speed);
@@ -149,7 +158,10 @@ void init_menue()
   menue.sh_fps->SetDataContext(0, 1, 1, &Gl_options.show_fps);
 
   menue.Gamma_set->SetEvent(Gamma_app);
-  menue.Render_cube->SetEvent(Render_cube_app);
+  menue.Render_cube_skeleton->SetEvent(Render_cube_skeleton_app);
+  menue.Render_cube_light->SetEvent(Render_cube_light_app);
+  menue.Render_cube_texture->SetEvent(Render_cube_texture_app);
+  menue.Render_cube_free_camera->SetEvent(Render_cube_free_camera_app);
   menue.P_S_Test->SetEvent(PixelSpeedTest_app);
   menue.R_S_Test->SetEvent(RectSpeedTest_app);
   menue.Rf_S_Test->SetEvent(RectFixSpeedTest_app);
@@ -157,6 +169,4 @@ void init_menue()
   menue.ASCII_2_S_Test->SetEvent(CharSpeedTest2_app);
   menue.Chip_Info->SetEvent(ChipInfo_app);
   menue.Flash_Info->SetEvent(FlashInfo_app);
-
-  Serial.printf("heap :%d \n", system_get_free_heap_size());
 }

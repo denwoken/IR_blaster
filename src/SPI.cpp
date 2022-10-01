@@ -34,7 +34,8 @@ void begin_spi_intr(void (*func)(void))
 
     CLEAR_PERI_REG_MASK(SPI_SLAVE(SPI_), 0x3ff);
 
-    ETS_SPI_INTR_ATTACH(func, NULL); // Serial.println("attach interrupt sucess");
+    ETS_SPI_INTR_ATTACH(func, NULL);
+    Serial.println("attach interrupt sucess");
     // ETS_SPI_INTR_ENABLE();
 }
 void begin_spi(uint32_t freq)

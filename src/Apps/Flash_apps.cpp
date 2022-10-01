@@ -24,12 +24,12 @@ extern Button *B_but;
 extern Button *C_but;
 extern Button *T_but;
 
-#include "menueItem.h"
+#include "Menue/menueItem.h"
 
 #include "FlashOptions.h"
 extern Global_options Gl_options;
 
-#include "Flash_apps.h"
+#include "Apps/Flash_apps.h"
 const char *flash_mapps[] = {
     "4M_MAP_256_256",
     "2M",

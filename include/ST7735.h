@@ -97,14 +97,16 @@ enum
 #define SPI_INTR_ENABLE() \
 	;                     \
 	ETS_SPI_INTR_ENABLE();
-
 #define SPI_INTR_DISABLE() \
 	;                      \
 	ETS_SPI_INTR_DISABLE();
 
+void ST7735_begin_spi_intr();
+
 void ST7735_setAddrWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 // inline uint32_t ST7735_setAddr(uint16_t x, uint16_t w);
 
+// void ST7735_setfreq(uint32_t freq);
 void ST7735_begin(int8_t dc, uint32_t freq);
 
 void ST7735_invertDisplay(bool i);
@@ -118,7 +120,7 @@ void writeCommand16(uint16_t cmd);
 
 void ST7735_displayInit(const uint8_t *addr);
 
-void disable_queue();
+void wait_end_sending();
 
 void ST7735_pixel_to_queue(int16_t x, int16_t y, uint16_t color);
 void ST7735_Rect_to_queue(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);

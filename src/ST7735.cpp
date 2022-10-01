@@ -8,16 +8,9 @@ uint8_t _width = 128;
 
 #include "FlashOptions.h"
 extern Global_options Gl_options;
+#include "buffering.h"
 
 static void IRAM_ATTR intr_spi(void);
-
-static uint16_t counter_execute = 0;
-static uint16_t counter_add = 0;
-
-static bool spi_intr_flag = 0;
-static bool first_trans_flag = 1;
-
-static uint32_t pixel_num_buff_tr = 0;
 
 static inline void SPI_DC_HIGH(void) { GPOS = 1 << 2; } //_dc
 static inline void SPI_DC_LOW(void) { GPOC = 1 << 2; }  //_dc
@@ -80,14 +73,25 @@ static const uint8_t PROGMEM
 typedef struct spi_command
 {
     uint8_t id = 0;
-    // uint8_t x = 0; uint8_t w = 0;
-    // uint8_t y = 0; uint8_t h = 0;
+
+    uint8_t x = 0;
+    uint8_t y = 0;
+
+    uint8_t w = 0;
+    uint8_t h = 0;
+
     uint32_t xa = 0;
     uint32_t ya = 0;
+
     uint16_t len = 0;
+    uint8_t char_id = 0;
     union
     {
-        uint16_t value;
+        struct
+        {
+            uint16_t value0;
+            uint16_t value1;
+        };
         uint16_t *ptr;
     } color;
 } spi_command;
@@ -121,12 +125,21 @@ void ST7735_displayInit(const uint8_t *addr)
     }
 }
 
+// void ST7735_setfreq(uint32_t freq)
+// {
+// }
+
+void ST7735_begin_spi_intr()
+{
+    begin_spi_intr(intr_spi);
+}
+
 void ST7735_begin(int8_t dc, uint32_t freq)
 {
     pinMode(dc, OUTPUT);
     digitalWrite(dc, HIGH);
     begin_spi(freq);
-    begin_spi_intr(intr_spi);
+    ST7735_begin_spi_intr();
     ST7735_displayInit(Rcmd1);
     ST7735_displayInit(Rcmd2red);
     ST7735_displayInit(Gl_options.GammaPOS);
@@ -244,8 +257,16 @@ void ST7735_setAddrWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
     writeCommand(ST77XX_RAMWR); // write to RAM
 }
 
+static bool spi_intr_flag = 0;
+
 void IRAM_ATTR intr_spi(void)
 {
+    static uint16_t counter_execute = 0;
+    static uint32_t pixel_num_buff_tr = 0;
+    static bool first_trans_flag = 1;
+    static uint16_t pixels_left = 0;
+    static uint8_t char_m[6];
+    static uint16_t bcolor, color;
     // uint32_t ew = READ_PERI_REG(0x3ff00020);
     // uint32_t we = READ_PERI_REG(SPI_SLAVE(HSPI_));
     WRITE_PERI_REG(SPI_SLAVE(HSPI_), SPI_TRANS_DONE_EN);
@@ -281,42 +302,37 @@ void IRAM_ATTR intr_spi(void)
     break;
     case CHAR_COMM_2:
     {
-        static uint8_t char_m[6];
 
-        static uint16_t bcolor;
-        static uint16_t color;
         if (first_trans_flag)
         {
             first_trans_flag = 0;
+            pixel_num_buff_tr = 0;
 
-            for (int i = 0; i < 5; i++)
-                char_m[i] = ((uint8_t *)(spi_queue[counter_execute].color.ptr))[i];
+            char c = spi_queue[counter_execute].char_id;
+            for (uint8_t i = 0; i < 5; i++)
+                char_m[i] = (uint8_t)pgm_read_byte(&font[c * 5 + i]);
             char_m[5] = 0;
 
-            pixel_num_buff_tr = 0;
+            bcolor = spi_queue[counter_execute].color.value1;
+            color = spi_queue[counter_execute].color.value0;
+            uint8_t x = spi_queue[counter_execute].x;
+            uint8_t y = spi_queue[counter_execute].y;
 
             SPI_INTR_DISABLE();
 
             writeCommand(ST77XX_CASET);
-            write32(spi_queue[counter_execute].ya);
-            bcolor = *(spi_queue[counter_execute].color.ptr + 3);
-            color = *(spi_queue[counter_execute].color.ptr + 4);
-
+            write32(ST7735_setAddr(y, 8 * 2));
             writeCommand(ST77XX_RASET);
-            write32(spi_queue[counter_execute].xa);
-            os_free(spi_queue[counter_execute].color.ptr);
-
+            write32(ST7735_setAddr(x, 6 * 2));
             writeCommand(ST77XX_RAMWR);
 
-            if (spi_queue[counter_execute].len > 32)
-                setDataBits(512);
+            setDataBits(512);
             WRITE_PERI_REG(SPI_SLAVE(HSPI_), SPI_TRANS_DONE_EN);
             SPI_INTR_ENABLE();
         }
 
-        if (spi_queue[counter_execute].len > 32)
+        if (pixel_num_buff_tr < (8 * 6 * 4 / 2 - 16))
         {
-            spi_queue[counter_execute].len -= 32;
 
             uint16_t data_16 = 0;
             for (uint16_t i = 0; i < 8; i++)
@@ -324,14 +340,9 @@ void IRAM_ATTR intr_spi(void)
                 uint16_t i_32 = pixel_num_buff_tr + i;
 
                 if (1 & (char_m[i_32 >> 4] >> (i_32 & 7)))
-                {
                     data_16 = color;
-                }
                 else
-                {
                     data_16 = bcolor;
-                }
-
                 *(ADDR_16BIT_SPI1W0 + 2 * i) = data_16;
                 //*(ADDR_16BIT_SPI1W0 + 2*i + 1 ) = data_16;
                 *(ADDR_16BIT_SPI1W0 + 2 * i + 16) = data_16;
@@ -346,22 +357,15 @@ void IRAM_ATTR intr_spi(void)
         {
             first_trans_flag = 1;
 
-            // const uint16_t size = spi_queue[counter_execute].len;
-            // setDataBits(size << 4);
-
             uint16_t data_16 = 0;
             for (uint16_t i = 0; i < 8; i++)
             {
                 uint16_t i_32 = pixel_num_buff_tr + i;
 
                 if (1 & (char_m[i_32 >> 4] >> (i_32 & 7)))
-                {
                     data_16 = color;
-                }
                 else
-                {
                     data_16 = bcolor;
-                }
 
                 *(ADDR_16BIT_SPI1W0 + 2 * i) = data_16;
                 //*(ADDR_16BIT_SPI1W0 + 2*i + 1 ) = data_16;
@@ -370,13 +374,9 @@ void IRAM_ATTR intr_spi(void)
             }
 
             if (counter_execute == BUFF_SIZE)
-            {
                 counter_execute = 0;
-            }
             else
-            {
-                counter_execute++;
-            } //   ��������� �������� ��� counter_execute
+                counter_execute++; //   ��������� �������� ��� counter_execute
             *id_command = 0;
             if (spi_queue[counter_execute].id == 0)
             {
@@ -390,26 +390,25 @@ void IRAM_ATTR intr_spi(void)
 
     case CHAR_COMM_1:
     {
-        static uint8_t char_m[6];
-        static uint16_t bcolor, color;
-
         if (first_trans_flag)
         {
             first_trans_flag = 0;
 
-            for (int i = 0; i < 5; i++)
-                char_m[i] = ((uint8_t *)(spi_queue[counter_execute].color.ptr))[i];
+            uint8_t c = spi_queue[counter_execute].char_id;
+            for (uint8_t i = 0; i < 5; i++)
+                char_m[i] = (uint8_t)pgm_read_byte(&font[c * 5 + i]);
             char_m[5] = 0;
 
-            bcolor = *(spi_queue[counter_execute].color.ptr + 3);
-            color = *(spi_queue[counter_execute].color.ptr + 4);
-            os_free(spi_queue[counter_execute].color.ptr);
+            bcolor = spi_queue[counter_execute].color.value1;
+            color = spi_queue[counter_execute].color.value0;
+            uint8_t x = spi_queue[counter_execute].x;
+            uint8_t y = spi_queue[counter_execute].y;
 
             SPI_INTR_DISABLE();
             writeCommand(ST77XX_CASET);
-            write32(spi_queue[counter_execute].ya);
+            write32(ST7735_setAddr(y, 8));
             writeCommand(ST77XX_RASET);
-            write32(spi_queue[counter_execute].xa);
+            write32(ST7735_setAddr(x, 6));
             writeCommand(ST77XX_RAMWR);
 
             WRITE_PERI_REG(SPI_SLAVE(HSPI_), SPI_TRANS_DONE_EN);
@@ -423,24 +422,15 @@ void IRAM_ATTR intr_spi(void)
                 uint16_t i_32 = (i << 1);
 
                 if (1 & (char_m[i_32 >> 3] >> (i_32 & 7)))
-                {
                     data_32 = color << 16;
-                }
                 else
-                {
                     data_32 = bcolor << 16;
-                }
-
                 i_32++;
-
                 if (1 & (char_m[i_32 >> 3] >> (i_32 & 7)))
-                {
                     data_32 |= color;
-                }
                 else
-                {
                     data_32 |= bcolor;
-                }
+
                 *(&SPI1W0 + i) = data_32;
             }
         }
@@ -456,38 +446,24 @@ void IRAM_ATTR intr_spi(void)
                 uint16_t i_32 = 32 + (i << 1);
 
                 if (1 & (char_m[i_32 >> 3] >> (i_32 & 7)))
-                {
                     data_32 = color << 16;
-                }
                 else
-                {
                     data_32 = bcolor << 16;
-                }
-
                 i_32++;
 
                 if (1 & (char_m[i_32 >> 3] >> (i_32 & 7)))
-                {
                     data_32 |= color;
-                }
                 else
-                {
                     data_32 |= bcolor;
-                }
                 *(&SPI1W0 + i) = data_32;
             }
 
             if (counter_execute == BUFF_SIZE)
-            {
                 counter_execute = 0;
-            }
             else
-            {
-                counter_execute++;
-            } //   ��������� �������� ��� counter_execute
-            // os_free(spi_queue[counter_execute].color.ptr);
+                counter_execute++; //   ��������� �������� ��� counter_execute
             *id_command = 0;
-            if (spi_queue[counter_execute].id == 0)
+            if (spi_queue[counter_execute].id == NONE)
             {
                 SPI_INTR_DISABLE();
                 spi_intr_flag = 0;
@@ -502,42 +478,41 @@ void IRAM_ATTR intr_spi(void)
         if (first_trans_flag)
         {
             first_trans_flag = 0;
+            pixel_num_buff_tr = 0;
 
             SPI_INTR_DISABLE();
 
+            // color = spi_queue[counter_execute].color.value0;
+            uint8_t x = spi_queue[counter_execute].x;
+            uint8_t y = spi_queue[counter_execute].y;
+            uint8_t w = spi_queue[counter_execute].w;
+            uint8_t h = spi_queue[counter_execute].h;
+            pixels_left = w * h;
             writeCommand(ST77XX_CASET);
-            write32(spi_queue[counter_execute].ya);
+            write32(ST7735_setAddr(y, h));
             writeCommand(ST77XX_RASET);
-            write32(spi_queue[counter_execute].xa);
+            write32(ST7735_setAddr(x, w));
             writeCommand(ST77XX_RAMWR);
 
-            if (spi_queue[counter_execute].len < 10)
+            if (pixels_left < 10)
             {
                 first_trans_flag = 1;
 
-                setDataBits(16 * spi_queue[counter_execute].len);
-                for (uint16_t i = 0; i < spi_queue[counter_execute].len; i += 2)
-                {
-                    *(ADDR_16BIT_SPI1W0 + i) = spi_queue[counter_execute].color.value;
-                }
+                setDataBits(16 * pixels_left);
+                for (uint16_t i = 0; i < pixels_left; i += 2)
+                    *(ADDR_16BIT_SPI1W0 + i) = spi_queue[counter_execute].color.value0;
 
                 SPI1CMD |= SPIBUSY;
 
                 *id_command = 0;
 
                 if (counter_execute == BUFF_SIZE)
-                {
                     counter_execute = 0;
-                }
                 else
-                {
-                    counter_execute++;
-                } // ��������� �������� ��� counter_execute
+                    counter_execute++; // ��������� �������� ��� counter_execute
 
                 while (SPI1CMD & SPIBUSY)
-                {
                     asm volatile("NOP\n");
-                };
 
                 if (spi_queue[counter_execute].id != 0)
                 {
@@ -545,51 +520,38 @@ void IRAM_ATTR intr_spi(void)
                     SPI_INTR_ENABLE();
                 }
                 else
-                {
                     spi_intr_flag = 0;
-                }
-
                 break;
             }
-            else if (spi_queue[counter_execute].len > 32)
+            else if (pixels_left > 32)
             {
                 setDataBits(512);
                 for (uint16_t i = 0; i < 32; i += 2)
-                {
-                    *(ADDR_16BIT_SPI1W0 + i) = spi_queue[counter_execute].color.value;
-                }
+                    *(ADDR_16BIT_SPI1W0 + i) = spi_queue[counter_execute].color.value0;
             }
 
             WRITE_PERI_REG(SPI_SLAVE(HSPI_), SPI_TRANS_DONE_EN);
             SPI_INTR_ENABLE();
         }
 
-        if (spi_queue[counter_execute].len > 32)
+        if (pixels_left > 32)
         {
-            spi_queue[counter_execute].len -= 32;
+            pixels_left -= 32;
             SPI1CMD |= SPIBUSY;
         }
         else
         {
             first_trans_flag = 1;
 
-            const uint16_t size = spi_queue[counter_execute].len;
+            setDataBits(pixels_left * 16);
 
-            setDataBits(size * 16);
-
-            for (uint16_t i = 0; i < size; i += 2)
-            {
-                *(ADDR_16BIT_SPI1W0 + i) = spi_queue[counter_execute].color.value;
-            }
+            for (uint16_t i = 0; i < pixels_left; i += 2)
+                *(ADDR_16BIT_SPI1W0 + i) = spi_queue[counter_execute].color.value0;
 
             if (counter_execute == BUFF_SIZE)
-            {
                 counter_execute = 0;
-            }
             else
-            {
-                counter_execute++;
-            } //   ��������� �������� ��� counter_execute
+                counter_execute++; //   ��������� �������� ��� counter_execute
 
             *id_command = 0;
             // Serial.printf("c_ex %d\n", counter_execute);
@@ -598,7 +560,7 @@ void IRAM_ATTR intr_spi(void)
                 spi_intr_flag = 0;
                 SPI_INTR_DISABLE();
             }
-            // else{WRITE_PERI_REG(SPI_SLAVE(HSPI_), SPI_TRANS_DONE_EN);SPI_INTR_ENABLE();}
+            // else{ WRITE_PERI_REG(SPI_SLAVE(HSPI_), SPI_TRANS_DONE_EN); SPI_INTR_ENABLE(); }
 
             SPI1CMD |= SPIBUSY;
         }
@@ -611,26 +573,31 @@ void IRAM_ATTR intr_spi(void)
         if (first_trans_flag)
         {
             SPI_INTR_DISABLE();
+
+            uint8_t x = spi_queue[counter_execute].x;
+            uint8_t y = spi_queue[counter_execute].y;
+            uint8_t w = spi_queue[counter_execute].w;
+            uint8_t h = spi_queue[counter_execute].h;
+
             writeCommand(ST77XX_CASET);
-            write32(spi_queue[counter_execute].ya);
+            write32(ST7735_setAddr(y, h));
             addr_16_data = spi_queue[counter_execute].color.ptr;
+            pixels_left = w * h;
             writeCommand(ST77XX_RASET);
+            write32(ST7735_setAddr(x, w));
             pixel_num_buff_tr = 0;
             first_trans_flag = 0;
-            write32(spi_queue[counter_execute].xa);
             writeCommand(ST77XX_RAMWR);
 
-            if (spi_queue[counter_execute].len > 32)
+            if (pixels_left > 32)
                 setDataBits(512);
             WRITE_PERI_REG(SPI_SLAVE(HSPI_), SPI_TRANS_DONE_EN);
             SPI_INTR_ENABLE();
         }
 
-        if (spi_queue[counter_execute].len > 32)
+        if (pixels_left > 32)
         {
-            spi_queue[counter_execute].len -= 32;
-
-            // os_memcpy(ADDR_16BIT_SPI1W0 , spi_queue[counter_execute].colors + pixel_num_buff_tr, 64);
+            pixels_left -= 32;
             for (uint16_t i = 0; i < 16; i++)
             {
                 const uint16_t *offset = addr_16_data + (i << 1) + pixel_num_buff_tr;
@@ -644,10 +611,9 @@ void IRAM_ATTR intr_spi(void)
         else
         {
             first_trans_flag = 1;
-            const uint16_t size = spi_queue[counter_execute].len;
-            setDataBits(size * 16);
+            setDataBits(pixels_left * 16);
 
-            for (uint16_t i = 0; i < size / 2; i++)
+            for (uint16_t i = 0; i < pixels_left / 2; i++)
             {
                 const uint16_t *offset = addr_16_data + (i << 1) + pixel_num_buff_tr;
                 *(&SPI1W0 + i) = (*(offset + 1)) | ((*(offset)) << 16);
@@ -656,17 +622,11 @@ void IRAM_ATTR intr_spi(void)
             //     const uint16_t* offset = addr_16_data + size-1 + pixel_num_buff_tr;
             //     *(&SPI1W0 + size/2 - 1) = (*(offset + 1)) | ((*(offset)) << 16);
             // }
-            // os_memcpy(ADDR_8BIT_SPI1W0, spi_queue[counter_execute].colors + pixel_num_buff_tr, 2* size);
 
             if (counter_execute == BUFF_SIZE)
-            {
                 counter_execute = 0;
-            }
             else
-            {
-                counter_execute++;
-            } //   ��������� �������� ��� counter_execute
-
+                counter_execute++; //   ��������� �������� ��� counter_execute
             *id_command = 0;
 
             if (spi_queue[counter_execute].id == 0)
@@ -682,6 +642,7 @@ void IRAM_ATTR intr_spi(void)
     }
 }
 // Gl_options.spi_queue
+static uint16_t counter_add = 0;
 void ST7735_pixel_to_queue(int16_t x, int16_t y, uint16_t color)
 {
     if (!queue_is_Nempty() || !Gl_options.spi_queue)
@@ -692,24 +653,21 @@ void ST7735_pixel_to_queue(int16_t x, int16_t y, uint16_t color)
         SPI1CMD |= SPIBUSY;
         return;
     }
+
     while (spi_queue[counter_add].id != NONE)
-    {
-        asm volatile("NOP\n");
-    } // yield();
+        asm volatile("NOP\n"); // yield();
+
     spi_queue[counter_add].id = FILL_RECT_COMM;
-    spi_queue[counter_add].xa = ST7735_setAddr(x, 1);
-    spi_queue[counter_add].ya = ST7735_setAddr(y, 1);
-    spi_queue[counter_add].color.value = color;
-    spi_queue[counter_add].len = 1;
+    spi_queue[counter_add].x = x;
+    spi_queue[counter_add].y = y;
+    spi_queue[counter_add].w = 1;
+    spi_queue[counter_add].h = 1;
+    spi_queue[counter_add].color.value0 = color;
 
     if (counter_add == BUFF_SIZE)
-    {
         counter_add = 0;
-    }
     else
-    {
-        counter_add++;
-    } //   ��������� �������� ��� counter_add
+        counter_add++; //   ��������� �������� ��� counter_add
 }
 
 void ST7735_Rect_to_queue(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
@@ -754,16 +712,17 @@ void ST7735_Rect_to_queue(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t c
         }
         return;
     }
+
     while (spi_queue[counter_add].id != NONE)
-    {
-        asm volatile("NOP\n");
-    } // yield();
+        asm volatile("NOP\n"); // yield();
 
     spi_queue[counter_add].id = FILL_RECT_COMM;
-    spi_queue[counter_add].xa = ST7735_setAddr(x, w);
-    spi_queue[counter_add].ya = ST7735_setAddr(y, h);
-    spi_queue[counter_add].color.value = color;
-    spi_queue[counter_add].len = lenn; // w * h;
+    spi_queue[counter_add].x = x;
+    spi_queue[counter_add].y = y;
+    spi_queue[counter_add].w = w;
+    spi_queue[counter_add].h = h;
+    spi_queue[counter_add].color.value0 = color;
+    spi_queue[counter_add].len = lenn;
 
     if (counter_add == BUFF_SIZE)
         counter_add = 0;
@@ -815,25 +774,22 @@ void ST7735_buff_to_queue(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *
             }
         }
     }
+
     while (spi_queue[counter_add].id != NONE)
-    {
-        asm volatile("NOP\n");
-    } // yield();
+        asm volatile("NOP\n"); // yield();
 
     spi_queue[counter_add].id = BUFF_COMM;
-    spi_queue[counter_add].xa = ST7735_setAddr(x, w);
-    spi_queue[counter_add].ya = ST7735_setAddr(y, h);
+    spi_queue[counter_add].x = x;
+    spi_queue[counter_add].y = y;
+    spi_queue[counter_add].w = w;
+    spi_queue[counter_add].h = h;
     spi_queue[counter_add].color.ptr = colors;
     spi_queue[counter_add].len = lenn;
 
     if (counter_add == BUFF_SIZE)
-    {
         counter_add = 0;
-    }
     else
-    {
-        counter_add++;
-    } //   ��������� �������� ��� counter_add
+        counter_add++; //   ��������� �������� ��� counter_add
 
     if (!queue_is_Nempty())
     {
@@ -843,14 +799,16 @@ void ST7735_buff_to_queue(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *
     }
 }
 
-void disable_queue()
+void wait_end_sending()
 {
+
     wait_queue_to_empty();
     if (spi_intr_flag)
     {
         spi_intr_flag = 0;
         SPI_INTR_DISABLE();
     }
+    Buffering::stop_buffer_sending();
 }
 
 void ST7735_char_to_queue(uint16_t x, uint16_t y, unsigned char c, uint16_t color, uint16_t bcolor, uint8_t size)
@@ -872,24 +830,16 @@ void ST7735_char_to_queue(uint16_t x, uint16_t y, unsigned char c, uint16_t colo
             uint16_t i_32 = (i << 1);
 
             if (1 & (char_m[i_32 >> 3] >> (i_32 & 7)))
-            {
                 data_32 = color << 16;
-            }
             else
-            {
                 data_32 = bcolor << 16;
-            }
 
             i_32++;
 
             if (1 & (char_m[i_32 >> 3] >> (i_32 & 7)))
-            {
                 data_32 |= color;
-            }
             else
-            {
                 data_32 |= bcolor;
-            }
             *(&SPI1W0 + i) = data_32;
         }
         SPI1CMD |= SPIBUSY;
@@ -936,35 +886,6 @@ void ST7735_char_to_queue(uint16_t x, uint16_t y, unsigned char c, uint16_t colo
         asm volatile("NOP\n");
     }; // yield();
 
-    uint8_t *char_mem;
-
-    char_mem = (uint8_t *)os_malloc(10);
-    if (char_mem == NULL)
-    {
-        Serial.println("can't allocate memory");
-        return;
-    }
-
-    for (uint8_t i = 0; i < 5; i++)
-    {
-        *(char_mem + i) = (uint8_t)pgm_read_byte(&font[c * 5 + i]);
-        /*
-        uint8_t line = char_mem[i];
-        for (int8_t j = 0; j < 8; j++, line >>= 1) {
-            if (line & 1) {
-                Serial.printf("$");
-            }
-            else {
-                Serial.printf("0");
-            }
-        }Serial.printf("\n");
-        */
-    }
-
-    char_mem[5] = size;
-    *((uint16_t *)char_mem + 3) = bcolor;
-    *((uint16_t *)char_mem + 4) = color;
-
     switch (size)
     {
     case 1:
@@ -977,19 +898,18 @@ void ST7735_char_to_queue(uint16_t x, uint16_t y, unsigned char c, uint16_t colo
 
     uint8_t h = 8 * size;
     uint8_t w = 6 * size;
-    spi_queue[counter_add].xa = ST7735_setAddr(x, w);
-    spi_queue[counter_add].ya = ST7735_setAddr(y, h);
-    spi_queue[counter_add].color.ptr = (uint16_t *)char_mem;
+    spi_queue[counter_add].x = x;
+    spi_queue[counter_add].y = y;
+    spi_queue[counter_add].w = w;
+    spi_queue[counter_add].h = h;
+    spi_queue[counter_add].color.value0 = color;
+    spi_queue[counter_add].color.value1 = bcolor;
     spi_queue[counter_add].len = w * h;
-
+    spi_queue[counter_add].char_id = c;
     if (counter_add == BUFF_SIZE)
-    {
         counter_add = 0;
-    }
     else
-    {
-        counter_add++;
-    } //   ��������� �������� ��� counter_add
+        counter_add++; //   ��������� �������� ��� counter_add
 
     if (!queue_is_Nempty())
     {

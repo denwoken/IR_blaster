@@ -81,13 +81,13 @@ void SimpleCube::rotateZ(float fi)
   for (uint8_t i = 0; i < 8; i++)
     RotateZ(Points + i, fi);
 }
-void SimpleCube::draw()
+void SimpleCube::draw_skeleton()
 {
   Vector2D vec2d;
   for (uint8_t i = 0; i < 12; i++)
   {
     vec2d.point0 = Simple_projection(vec3d[i].ptr_point0);
     vec2d.point1 = Simple_projection(vec3d[i].ptr_point1);
-    tft.writeLine(vec2d.x0, vec2d.y0, vec2d.x1, vec2d.y1, GREEN);
+    tft.writeLine(vec2d.x0, vec2d.y0, vec2d.x1, vec2d.y1, i < 3 ? RED : GREEN);
   }
 }

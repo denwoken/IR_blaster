@@ -9,7 +9,7 @@ extern "C"
 };
 
 #include "my_math.h"
-#include "Gamma&Tests.h"
+#include "Apps/Gamma&Tests.h"
 #include "ST7735.h"
 #include "Graphics.h"
 #include "Inputs.h"
@@ -102,24 +102,22 @@ void init_global_options()
 
 void apply_system_settings()
 {
+  wait_end_sending();
 
   tft.setSPISpeed(Gl_options.SPI_speed * 1000 * 1000);
   system_update_cpu_freq(Gl_options.CPU_speed);
-  if (!Gl_options.spi_queue)
-    disable_queue();
 
   switch (Gl_options.buffering)
   {
   case 0:
-    free_all_buffers();
+    ST7735_begin_spi_intr();
+    Buffering::free_all_buffers();
     break;
   case 1:
-    disable_queue();
-    init_single_buffer();
+    Buffering::init_single_buffer();
     break;
   case 2:
-    disable_queue();
-    init_double_buffer();
+    Buffering::init_double_buffer();
     break;
   }
 }

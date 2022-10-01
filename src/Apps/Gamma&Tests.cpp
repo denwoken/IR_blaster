@@ -8,7 +8,7 @@ extern "C"
 };
 
 #include "my_math.h"
-#include "Gamma&Tests.h"
+#include "Apps/Gamma&Tests.h"
 
 #include "ST7735.h"
 #include "Graphics.h"
@@ -24,7 +24,7 @@ extern Button *B_but;
 extern Button *C_but;
 extern Button *T_but;
 
-#include "menueItem.h"
+#include "Menue/menueItem.h"
 
 #include "Timer.h"
 
@@ -108,13 +108,13 @@ void Gamma_app(menueItem *item, void *ptr)
 
   while (1)
   {
-    for (uint32_t j = 0; j <= 0b11111; j++)
+    for (uint32_t j = 0; j <= 31; j++)
     {
       tft.writeFillRect(160 - 16 * 4, j * 4, 16, 4, j);
       tft.writeFillRect(160 - 16 * 3, j * 4, 16, 4, j << 6);
       tft.writeFillRect(160 - 16 * 3, j * 4 + 2, 16, 4, (j << 6) + 1);
       tft.writeFillRect(160 - 16 * 2, j * 4, 16, 4, j << 11);
-      tft.writeFillRect(160 - 16, j * 4, 16, 4, (j << 11) | (j << 6) | j); // Gray
+      tft.writeFillRect(160 - 16, j * 4, 16, 4, (j << 11) | (j << 6) | (j)); // Gray
 
       // ST7735_Rect_to_queue(160 - 16 * 4, j * 4, 16, 4, j);
       // ST7735_Rect_to_queue(160 - 16 * 3, j * 4, 16, 4, j << 6);
@@ -232,6 +232,7 @@ void Gamma_app(menueItem *item, void *ptr)
     // draw_settings();
     system_soft_wdt_feed();
     tft.Renderer();
+    tft.Clear();
   }
 
   save_settings();

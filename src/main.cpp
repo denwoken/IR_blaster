@@ -17,14 +17,14 @@ extern Button *B_but;
 extern Button *C_but;
 extern Button *T_but;
 //
-#include "menueItem.h"
-#include "OptionsItem.h"
+#include "Menue/menueItem.h"
+#include "Menue/OptionsItem.h"
 
 #include "Pictures.h"
 #include "Image565.h"
 
 #include "FlashOptions.h"
-#include "Init_menue.h"
+#include "Menue/Init_menue.h"
 extern struct menuelist menue;
 
 //#include "LittleFS.h"

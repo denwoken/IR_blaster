@@ -22,15 +22,15 @@ extern Button *B_but;
 extern Button *C_but;
 extern Button *T_but;
 
-#include "menueItem.h"
+#include "Menue/menueItem.h"
 
 #include "Timer.h"
 
-#include "Vertex_Graphics_apps.h"
+#include "Apps/Vertex_Graphics_apps.h"
 #include "Vectors.h"
 #include "SimpleCube.h"
 
-void Render_cube_app(menueItem *item, void *ptr)
+void Render_cube_skeleton_app(menueItem *item, void *ptr)
 {
   forcedQuickUpdate();
 
@@ -60,7 +60,7 @@ void Render_cube_app(menueItem *item, void *ptr)
     cube.rotateY(angle[1]);
     cube.rotateZ(angle[2]);
 
-    cube.draw();
+    cube.draw_skeleton();
 
     if (C_but->isClick())
       (parametr_id < 2) ? ({ parametr_id++; }) : ({ parametr_id = 0; });
@@ -94,3 +94,7 @@ void Render_cube_app(menueItem *item, void *ptr)
     tft.fillScreen(0); /// tft.Clear();
   }
 }
+
+void Render_cube_light_app(menueItem *item, void *ptr){};
+void Render_cube_texture_app(menueItem *item, void *ptr){};
+void Render_cube_free_camera_app(menueItem *item, void *ptr){};

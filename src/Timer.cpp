@@ -121,7 +121,7 @@ void update_1sec()
 
 void update_100msec()
 {
-
+	Serial.println(fps);
 	update_battery();
 	update_fps();
 	update_heap();

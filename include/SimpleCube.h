@@ -12,7 +12,7 @@ public:
     void rotateX(float fi);
     void rotateZ(float fi);
 
-    void draw();
+    void draw_skeleton();
 
     Point3D position;
     int16_t Size;
