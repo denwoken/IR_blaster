@@ -1,7 +1,7 @@
 
 #include "Arduino.h"
 
-#include "ST7735.h"
+#include "display_drivers/driver_ST7735.h"
 #include "Graphics.h"
 #include "user_interface.h"
 Graphics tft;
@@ -16,30 +16,35 @@ extern Button *R_but;
 extern Button *B_but;
 extern Button *C_but;
 extern Button *T_but;
-//
+
 #include "Menue/menueItem.h"
 #include "Menue/OptionsItem.h"
+#include "Menue/Init_menue.h"
 
 #include "Pictures.h"
 #include "Image565.h"
 
 #include "FlashOptions.h"
-#include "Menue/Init_menue.h"
+
 extern struct menuelist menue;
 
 //#include "LittleFS.h"
 
 void setup()
 {
-  Serial.begin(1000000);
-
+  Serial.begin(1000000, SERIAL_8N1, SERIAL_TX_ONLY);
+  Serial.println("-----------");
   pinMode(16, OUTPUT);
   digitalWrite(16, 0);
+  Serial.println("3333");
   init_global_options();
-
+  Serial.println("33");
   tft.init();
+  Serial.println("333");
   apply_system_settings();
+  Serial.println("3333");
   tft.fillScreen(0);
+  Serial.println("3333");
   //  Image565 image = Image565(image_Win1, 128, 156);
   //  image.AllocRAM();
   //  image.LoadfromCASH();
@@ -50,10 +55,12 @@ void setup()
   //  }
   //
   //  image.FreeRAM();
-
   init_inputs();
+  Serial.println("3333");
   init_HwTimer();
+  Serial.println("33333");
   init_menue();
+  Serial.println("33333");
 }
 uint32_t time1 = 0;
 uint64_t summ = 0;
@@ -63,8 +70,8 @@ void loop()
   while (1)
   {
     soft_updates();
-    menue.current = menue.current->update(); //
-    menue.current->renderSubmenues();        //
+    menue.current = menue.current->update();
+    menue.current->renderSubmenues();
     tft.Renderer();
     tft.Clear();
   }

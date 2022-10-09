@@ -2,7 +2,7 @@
 #include "Arduino.h"
 //#define cos
 //#define sin
-#include "ST7735.h"
+#include "display_drivers/driver_ST7735.h"
 extern uint8_t _width;
 extern uint8_t _height;
 
@@ -38,21 +38,22 @@ void Rotate(Point2D *point2D, float fi)
 
 Point2D Simple_projection(Point3D *point3D)
 {
-    int16_t camera_Z_near_plain = 10;
-    int16_t camera_position = -200;
-    int16_t Xe = point3D->x - 0;
-    int16_t Ye = point3D->y - 0;
-    int16_t Ze = point3D->z - camera_position;
+    int16_t Xe = point3D->x;
+    int16_t Ye = point3D->y;
+    int16_t Ze = point3D->z;
 
     int16_t Xp = _width / 2;
     int16_t Yp = _height / 2;
 
-    Xp += -(camera_Z_near_plain - Ze) * Xe / (camera_position - Ze);
-    Yp += (camera_Z_near_plain - Ze) * Ye / (camera_position - Ze);
-    // Xp += - 1*(camera_Z_near_plain - Ze) * Xe / Ze;
-    // Yp += + 1*(camera_Z_near_plain - Ze) * Ye / Ze;
-    // Xp +=  - Zp * Xe / ( Ze - camera->position.z);
-    // Yp +=  + Zp * Ye / ( Ze - camera->position.z);
+    // Xp += (10 - Ze) * Xe / (-200 - Ze);
+    // Yp += -(10 - Ze) * Ye / (-200 - Ze);
+    Xp += (100) * Xe / (Ze + 301);
+    Yp += -(100) * Ye / (Ze + 301);
+
+    // Xp += -1 * (camera_Z_near_plain - Ze) * Xe / Ze;
+    // Yp += +1 * (camera_Z_near_plain - Ze) * Ye / Ze;
+    //  Xp += -Zp * Xe / (Ze - camera_position);
+    //  Yp += +Zp * Ye / (Ze - camera_position);
 
     return {Xp, Yp};
 }

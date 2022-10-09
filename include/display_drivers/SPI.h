@@ -1,6 +1,4 @@
-
-#ifndef _SPI_H_INCLUDED
-#define _SPI_H_INCLUDED
+#pragma once
 
 #include <Arduino.h>
 //#include "Adafruit_ST77xx.h"
@@ -47,6 +45,13 @@ extern "C"
 #define ADDR_16BIT_SPI1W0 (volatile uint16_t *)&SPI1W0
 #define ADDR_32BIT_SPI1W0 (uint32_t *)&SPI1W0
 
+#define SPI_INTR_ENABLE() ETS_SPI_INTR_ENABLE()
+#define SPI_INTR_DISABLE() ETS_SPI_INTR_DISABLE()
+
+#define WAIT_END_PACK_TRANSFER() \
+    while (SPI1CMD & SPIBUSY)    \
+        asm volatile("NOP\n");
+
 void begin_spi_intr(void (*func)(void));
 void begin_spi(uint32_t freq);
 
@@ -64,5 +69,3 @@ void write2Bytes(uint16_t *dataPtr, uint16_t size);
 void write2Bytes_(uint16_t *dataPtr, uint16_t size);
 void write2Bytes(uint16_t data, uint16_t size);
 void write2Bytes_(uint16_t data, uint16_t size);
-
-#endif

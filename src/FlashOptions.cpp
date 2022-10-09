@@ -10,14 +10,14 @@ extern "C"
 
 #include "my_math.h"
 #include "Apps/Gamma&Tests.h"
-#include "ST7735.h"
+#include "display_drivers/driver_ST7735.h"
 #include "Graphics.h"
 #include "Inputs.h"
 #include "Buttons.h"
 extern Graphics tft;
 
-#include "buffering.h"
-
+#include "display_drivers/disp_buffering.h"
+#include "display_drivers/disp_Queue.h"
 #include "FlashOptions.h"
 #define align_32(a) ((a - 1) / 4 + 1) * 4
 
@@ -30,7 +30,7 @@ void set_def_settings()
 
   Gl_options.show_fps = 1;
   Gl_options.show_heap = 1;
-  Gl_options.buffering = 0;
+  Gl_options.buffering = 1; //
   Gl_options.spi_queue = 1;
   Gl_options.CPU_speed = 160;
   Gl_options.SPI_speed = 40; //*1000*1000
@@ -87,7 +87,6 @@ void init_global_options()
   ets_intr_lock();
   spi_flash_read(GLOBAL_OPTIONS_SECTOR * 0x1000, (uint32_t *)flag, 4);
   ets_intr_unlock();
-
   // Serial.printf("%08x\n", ((uint32_t*)flag)[0] );
   if (flag[0] == 0xff)
   {
@@ -110,8 +109,8 @@ void apply_system_settings()
   switch (Gl_options.buffering)
   {
   case 0:
-    ST7735_begin_spi_intr();
     Buffering::free_all_buffers();
+    disp_Queue::init_display_Queue();
     break;
   case 1:
     Buffering::init_single_buffer();
@@ -124,14 +123,11 @@ void apply_system_settings()
 
 void load_settings()
 {
-  uint8_t *ptr_data = (uint8_t *)os_malloc(len);
-
+  uint8_t ptr_data[len];
   ets_intr_lock();
   spi_flash_read(GLOBAL_OPTIONS_SECTOR * 0x1000, (uint32_t *)ptr_data, len);
   ets_intr_unlock();
-
   os_memcpy(&Gl_options, ptr_data + 1, sizeof(Global_options));
-  os_free(ptr_data);
 }
 
 void save_settings()

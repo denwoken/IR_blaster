@@ -1,3 +1,4 @@
+#include "Apps/Flash_apps.h"
 #include "Arduino.h"
 extern "C"
 {
@@ -10,7 +11,7 @@ extern "C"
 
 #include "Timer.h"
 
-#include "ST7735.h"
+#include "display_drivers/driver_ST7735.h"
 #include "Graphics.h"
 extern Graphics tft;
 extern uint8_t _width;
@@ -29,7 +30,6 @@ extern Button *T_but;
 #include "FlashOptions.h"
 extern Global_options Gl_options;
 
-#include "Apps/Flash_apps.h"
 const char *flash_mapps[] = {
     "4M_MAP_256_256",
     "2M",
@@ -40,6 +40,7 @@ const char *flash_mapps[] = {
     "32M_MAP_1024_1024",
     "64M_MAP_1024_1024",
     "128M_MAP_1024_1024"};
+
 void FlashInfo_app(menueItem *item, void *)
 {
   char **str = const_cast<char **>(flash_mapps);
@@ -96,6 +97,7 @@ void FlashInfo_app(menueItem *item, void *)
         else
           tft.writeFillRectPreclipped(j / 2, 66 + i * 20, 1, 8, GREEN);
       }
+      system_soft_wdt_feed();
     }
     tft.Renderer();
   }

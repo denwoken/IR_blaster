@@ -1,6 +1,6 @@
 
 
-#include "SPI.h"
+#include "display_drivers/SPI.h"
 //#include "HardwareSerial.h"
 //#include "Adafruit_ST77xx.h"
 
@@ -35,7 +35,7 @@ void begin_spi_intr(void (*func)(void))
     CLEAR_PERI_REG_MASK(SPI_SLAVE(SPI_), 0x3ff);
 
     ETS_SPI_INTR_ATTACH(func, NULL);
-    Serial.println("attach interrupt sucess");
+
     // ETS_SPI_INTR_ENABLE();
 }
 void begin_spi(uint32_t freq)
@@ -79,13 +79,10 @@ static uint32_t ClkRegToFreq(spiClk_t *reg)
 {
     return (ESP8266_CLOCK / ((reg->regPre + 1) * (reg->regN + 1)));
 }
+
 void setFrequency(uint32_t freq)
 {
-    while (SPI1CMD & SPIBUSY)
-    {
-        asm volatile("NOP\n");
-    }
-
+    WAIT_END_PACK_TRANSFER();
     static uint32_t lastSetFrequency = 0;
     static uint32_t lastSetRegister = 0;
 
@@ -197,31 +194,29 @@ void setDataBits(uint16_t bits)
 }
 
 void write(uint8_t data)
-{ // SPI_INTR_DISABLE();
-    while (SPI1CMD & SPIBUSY)
-        asm volatile("NOP\n");
+{
+    WAIT_END_PACK_TRANSFER();
+
     setDataBits(8);
     *ADDR_8BIT_SPI1W0 = data;
     SPI1CMD |= SPIBUSY;
-    // while (SPI1CMD & SPIBUSY); // CLEAR_PERI_REG_MASK(SPI_SLAVE(HSPI_), SPI_TRANS_DONE); //SPI_INTR_ENABLE();
-    // uint8_t *cbuf = reinterpret_cast<uint8_t*>(buf);
 }
 
 void write16(uint16_t data)
-{ // SPI_INTR_DISABLE();
-    // while (SPI1CMD & SPIBUSY);
+{
+    WAIT_END_PACK_TRANSFER();
+
     setDataBits(16);
     *ADDR_16BIT_SPI1W0 = data;
     SPI1CMD |= SPIBUSY;
-    // while (SPI1CMD & SPIBUSY); //CLEAR_PERI_REG_MASK(SPI_SLAVE(HSPI_), SPI_TRANS_DONE); SPI_INTR_ENABLE();
 }
 void write32(uint32_t data)
-{ // SPI_INTR_DISABLE();
-    // while (SPI1CMD & SPIBUSY);
+{
+    WAIT_END_PACK_TRANSFER();
+
     setDataBits(32);
     SPI1W0 = data;
     SPI1CMD |= SPIBUSY;
-    // while (SPI1CMD & SPIBUSY);//CLEAR_PERI_REG_MASK(SPI_SLAVE(HSPI_), SPI_TRANS_DONE); SPI_INTR_ENABLE();
 }
 // setDataBits(32);//100ns
 // SPI1W0 =0;//100ns

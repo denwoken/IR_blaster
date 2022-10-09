@@ -10,7 +10,8 @@ extern "C"
 #include "my_math.h"
 #include "Apps/Gamma&Tests.h"
 
-#include "ST7735.h"
+#include "display_drivers/disp_Queue.h"
+#include "display_drivers/driver_ST7735.h"
 #include "Graphics.h"
 extern Graphics tft;
 extern uint8_t _width;
@@ -227,8 +228,8 @@ void Gamma_app(menueItem *item, void *ptr)
     tft.setCursor(72 + 6, 0);
     tft.print("def");
 
-    ST7735_displayInit(GAMCTRP1);
-    ST7735_displayInit(GMCTRN1);
+    ST7735::displayInit(GAMCTRP1);
+    ST7735::displayInit(GMCTRN1);
     // draw_settings();
     system_soft_wdt_feed();
     tft.Renderer();

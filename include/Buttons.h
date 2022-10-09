@@ -1,5 +1,4 @@
-#ifndef Buttons_H_
-#define Buttons_H_
+#pragma once
 
 #include "Arduino.h"
 
@@ -38,7 +37,7 @@ public:
 	void setHoldtimeout(uint32_t);
 	void setIncfreq(uint32_t t);
 
-	//Flags  flags ;
+
 	struct {
 		unsigned int deb_timer : 1;
 		unsigned int cur_value : 1;
@@ -67,4 +66,3 @@ public:
 	 uint8_t inc_value;/////////
 
 };
-#endif // end 

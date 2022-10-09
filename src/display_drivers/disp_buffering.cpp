@@ -1,10 +1,10 @@
-#include "buffering.h"
+#include "display_drivers/disp_buffering.h"
 
-#include "ST7735.h"
+#include "display_drivers/driver_ST7735.h"
 extern uint8_t _height;
 extern uint8_t _width;
 
-#include "SPI.h"
+#include "display_drivers/SPI.h"
 extern "C"
 {
 #include <ets_sys.h>
@@ -69,14 +69,8 @@ void Buffering::init_single_buffer()
   free_all_buffers();
   buff_ptr_0 = os_malloc(_width * _height * 2);
   while (buff_ptr_0 == NULL)
-  {
-    Serial.println("bad alloc");
-    delay(10);
-    system_restart();
-    while (1)
-    {
-    }
-  }
+    tft.CriticalEror(PSTR("Critical Eror\nBad memory Allocationmemory is too\nfragmented.\nRestarting..."));
+
   os_memset(buff_ptr_0, 0, _width * _height * 2);
   CurrBuffer = buff_ptr_0;
 }
@@ -88,14 +82,7 @@ void Buffering::init_double_buffer()
   buff_ptr_1 = os_malloc(_width * _height * 1);
 
   while (buff_ptr_0 == NULL || buff_ptr_1 == NULL)
-  {
-    Serial.println("bad alloc");
-    delay(10);
-    system_restart();
-    while (1)
-    {
-    }
-  }
+    tft.CriticalEror(PSTR("Critical Eror\nBad memory Allocationmemory is too\nfragmented.\nRestarting..."));
   os_memset(buff_ptr_0, 0, _width * _height * 1);
   os_memset(buff_ptr_1, 0, _width * _height * 1);
   CurrBuffer = buff_ptr_0;
@@ -113,7 +100,7 @@ void Buffering::SwapBuffers()
 
 void Buffering::Send_single_Bufferr()
 {
-  ST7735_setAddrWindow(0, 0, _width, _height);
+  ST7735::setAddrWindow(0, 0, _width, _height);
   setDataBits(512);
   for (uint16_t pixel_num = 0; pixel_num < 128 * 160; pixel_num += 32)
   {
@@ -123,8 +110,7 @@ void Buffering::Send_single_Bufferr()
       *(&SPI1W0 + i) = (*(offset + 1)) | ((*offset) << 16);
     }
     SPI1CMD |= SPIBUSY;
-    while (SPI1CMD & SPIBUSY)
-      asm volatile("NOP\n");
+    WAIT_END_PACK_TRANSFER();
   }
 }
 void Buffering::wait_end_buffer_sending()
@@ -134,17 +120,17 @@ void Buffering::wait_end_buffer_sending()
 }
 void Buffering::stop_buffer_sending()
 {
+  wait_end_buffer_sending();
   SPI_INTR_DISABLE();
   sending_buff = 0;
-  while (SPI1CMD & SPIBUSY)
-    asm volatile("NOP\n");
+  WAIT_END_PACK_TRANSFER();
 }
 
 void Buffering::Start_sending_double_Bufferr()
 {
   wait_end_buffer_sending();
 
-  ST7735_setAddrWindow(0, 0, _width, _height);
+  ST7735::setAddrWindow(0, 0, _width, _height);
   setDataBits(512);
   pixel_num = 0;
   sending_buff = 1;

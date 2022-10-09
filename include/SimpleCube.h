@@ -13,7 +13,8 @@ public:
     void rotateZ(float fi);
 
     void draw_skeleton();
-
+    void draw();
+    void func(Point2D *P, uint8_t a, uint8_t b, uint8_t c, uint8_t d);
     Point3D position;
     int16_t Size;
     Point3D Points[8];

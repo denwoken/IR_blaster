@@ -19,6 +19,11 @@ public:
     this->y = y;
   };
   int16_t x, y;
+
+  float len()
+  {
+    return sqrt(x * x + y * y);
+  }
   Point2D operator/(int16_t b)
   {
     Point2D result(*this);
@@ -94,6 +99,11 @@ public:
     this->z = z;
   };
   int16_t x, y, z;
+  float len()
+  {
+    return sqrt(x * x + y * y + z * z);
+  }
+
   Point3D operator/(int16_t b)
   {
     Point3D result(*this);

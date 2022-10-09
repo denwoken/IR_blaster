@@ -3,7 +3,7 @@
 
 #include "Arduino.h"
 //#include "SPI.h"
-
+#include "Timer.h"
 extern "C"
 {
 #include "eagle_soc.h"
@@ -53,7 +53,8 @@ void init_inputs()
   B_but->setIncfreq(10);
   T_but->setIncfreq(10);
   C_but->setIncfreq(10);
-  delay(10);
+
+  init_HwTimer();
 };
 
 void IRAM_ATTR intr_gpio()

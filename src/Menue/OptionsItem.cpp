@@ -193,8 +193,13 @@ void OptionsItem::render()
 
 void OptionsItem::SetTextContext(const char *str, const char *format, uint8_t c)
 {
-	this->format = new char[strlen(format) + 1];
-	os_memcpy(this->format, format, strlen(format) + 1);
+	// char str[strlen_P(str_P)];
+	// strcpy_P(str, str_P);
+	// char str[strlen_P(format_P)];
+	// strcpy_P(str, format_P);
+
+	this->format = new char[strlen_P(format) + 1];
+	memcpy_P(this->format, format, strlen_P(format) + 1);
 
 	count_string_states = c;
 
@@ -202,9 +207,9 @@ void OptionsItem::SetTextContext(const char *str, const char *format, uint8_t c)
 		parametr_context = (char **)os_malloc(c * sizeof(char *));
 	for (uint8_t i = 0; i < c; i++)
 	{
-		uint8_t len = strlen(str) + 1;
-		parametr_context[i] = (char *)os_malloc(len * sizeof(char));
-		os_memcpy(parametr_context[i], str, len);
+		uint8_t len = strlen_P(str) + 1;
+		parametr_context[i] = (char *)os_malloc(len);
+		memcpy_P(parametr_context[i], str, len);
 		str += len;
 	}
 }

@@ -1,5 +1,4 @@
-#ifndef Inputs_H_
-#define Inputs_H_
+#pragma once
 
 #include "Arduino.h"
 
@@ -10,4 +9,3 @@
 void init_inputs();
 
 
-#endif // end 

@@ -1,7 +1,5 @@
 #include "Arduino.h"
 
-#include "Inputs.h"
-#include "Buttons.h"
 #include "Timer.h"
 
 extern "C"
@@ -19,21 +17,26 @@ extern Graphics tft;
 extern uint8_t _width;
 extern uint8_t _height;
 
+#include "FlashOptions.h"
+extern Global_options Gl_options;
+
+#include "Buttons.h"
 extern Button *L_but;
 extern Button *R_but;
 extern Button *B_but;
 extern Button *T_but;
 extern Button *C_but;
 
-#include "FlashOptions.h"
-extern Global_options Gl_options;
-
+// update at screen static values (rarely updated)
 void forcedQuickUpdate()
 {
 	draw_fps();
 	draw_battery();
 	draw_heap();
 }
+
+// update_*** -> updating the values
+// draw_*** -> sending data to display
 
 static uint32_t free_heap_size;
 void update_heap()
@@ -114,14 +117,16 @@ void draw_battery()
 	tft.writeFillRect(_width - 13, 1, 8 - i, 5, BLACK);
 }
 
+// soft timer, every >=1000 milliseconds
 void update_1sec()
 {
 	system_soft_wdt_feed();
 };
 
+// soft timer, every >=100 milliseconds
 void update_100msec()
 {
-	Serial.println(fps);
+	// Serial.println(fps);
 	update_battery();
 	update_fps();
 	update_heap();
@@ -189,6 +194,7 @@ void update_100msec()
 #endif
 }
 
+// soft timer, every loop cycle
 void soft_updates()
 {
 	count_Vframes++;
@@ -210,6 +216,7 @@ void soft_updates()
 	forcedQuickUpdate();
 }
 
+// initialize hardware timer
 void init_HwTimer()
 {
 	hw_timer_init(FRC1_SOURCE, 1); // FRC1_SOURCE NMI_SOURCE
@@ -217,6 +224,7 @@ void init_HwTimer()
 	TIMER_REG_WRITE(FRC1_LOAD_ADDRESS, 2 * 1000 * 80 / 16); // every 2 ms 0x20 FRC1_LOAD_ADDRESS
 }
 
+// harware timer function (every 2 milliseconds) 500 Hz
 void IRAM_ATTR hw_test_timer_cb()
 {
 	B_but->soft_update();

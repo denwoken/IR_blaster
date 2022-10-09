@@ -9,7 +9,7 @@ extern "C"
 
 #include "my_math.h"
 
-#include "ST7735.h"
+#include "display_drivers/driver_ST7735.h"
 #include "Graphics.h"
 extern Graphics tft;
 extern uint8_t _width;
@@ -39,7 +39,7 @@ void Render_cube_skeleton_app(menueItem *item, void *ptr)
 
   uint8_t parametr_id = 0;
 
-  SimpleCube cube(50);
+  SimpleCube cube(70);
   uint32_t time = WDEV_NOW();
   while (1)
   {
@@ -56,11 +56,15 @@ void Render_cube_skeleton_app(menueItem *item, void *ptr)
 
     cube.SetDefault();
 
+    // cube.rotateX(ang_vel[0]);
+    // cube.rotateY(ang_vel[1]);
+    // cube.rotateZ(ang_vel[2]);
     cube.rotateX(angle[0]);
     cube.rotateY(angle[1]);
     cube.rotateZ(angle[2]);
 
-    cube.draw_skeleton();
+    // cube.draw_skeleton();
+    cube.draw();
 
     if (C_but->isClick())
       (parametr_id < 2) ? ({ parametr_id++; }) : ({ parametr_id = 0; });
@@ -87,14 +91,20 @@ void Render_cube_skeleton_app(menueItem *item, void *ptr)
       ang_vel[parametr_id] += 0.1;
     if (B_but->isClick() || B_but->get_inc())
       ang_vel[parametr_id] -= 0.1;
-    // for (uint16_t i = 0; i < 10000; i++)
-    //   tft.writePixel(Random(0, 127), Random(26, 151), Random_16());
 
     tft.Renderer();
     tft.fillScreen(0); /// tft.Clear();
   }
 }
 
-void Render_cube_light_app(menueItem *item, void *ptr){};
-void Render_cube_texture_app(menueItem *item, void *ptr){};
-void Render_cube_free_camera_app(menueItem *item, void *ptr){};
+void Render_cube_light_app(menueItem *item, void *ptr){
+
+};
+
+void Render_cube_texture_app(menueItem *item, void *ptr){
+
+};
+
+void Render_cube_free_camera_app(menueItem *item, void *ptr){
+
+};

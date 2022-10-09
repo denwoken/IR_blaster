@@ -27,6 +27,7 @@ extern Graphics tft;
 
 menueItem::menueItem()
 {
+	title.name = NULL;
 	SetTitle("none", WHITE);
 };
 
@@ -52,8 +53,11 @@ void menueItem::Add(menueItem *a)
 	a->seq_num = context.len - 1;
 };
 
-void menueItem::SetTitle(const char *str, uint16_t col)
+void menueItem::SetTitle(const char *string, uint16_t col)
 {
+	char str[strlen_P(string)];
+	strcpy_P(str, string);
+
 	if (title.name != NULL)
 		os_free(title.name);
 	title.len = strlen(str);
@@ -64,14 +68,11 @@ void menueItem::SetTitle(const char *str, uint16_t col)
 
 menueItem *menueItem::GetChosenPtr()
 {
+	// Serial.printf("context.len %d  %d\n", context.len, context.current);
 	if (context.len != 0)
-	{
 		return context.submenues[context.current];
-	}
 	else
-	{
 		return NULL;
-	}
 }
 
 menueItem *menueItem::GetParentPtr()
@@ -280,8 +281,5 @@ void menueItem::renderSubmenues()
 {
 	renderTitle();
 	for (uint8_t i = 0; i < context.len; i++)
-	{
-
 		context.submenues[i]->render();
-	}
 }

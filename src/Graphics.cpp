@@ -1,6 +1,12 @@
 #include "Graphics.h"
-#include "ST7735.h"
+
 #include "Arduino.h"
+
+#include "display_drivers/disp_Queue.h"
+#include "display_drivers/driver_ST7735.h"
+#include "display_drivers/disp_buffering.h"
+#include "display_drivers/disp_Instant.h"
+#include "display_drivers/SPI.h"
 
 #include "stdarg.h"
 #include "my_math.h"
@@ -12,18 +18,11 @@ extern uint8_t _height;
 #include "FlashOptions.h"
 extern Global_options Gl_options;
 
-#include "buffering.h"
-
-Graphics::Graphics()
-{
-  _freq = 10000000;
-};
-
 void Graphics::init()
 {
   pinMode(2, OUTPUT);
   digitalWrite(2, HIGH);
-  ST7735_begin(2, _freq);
+  ST7735::begin(2, _freq);
 };
 
 void Graphics::setSPISpeed(uint32_t freq)
@@ -34,12 +33,75 @@ void Graphics::setSPISpeed(uint32_t freq)
   setFrequency(_freq); // setFrequency(40 * 1000 * 1000);
 };
 
+void Graphics::invertDisplay(bool i)
+{
+  ST7735::invertDisplay(i);
+}
+
+void Graphics::setRotation(uint8_t m)
+{
+  rotation = m;
+  ST7735::setRotation(rotation);
+}
+
+//####
+//####
+//####
+//###################################################################################################################
+
+void Graphics::drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size)
+{
+  if ((x < 0) ||
+      (y < 0) ||
+      ((x + 6 * size - 1) >= _width) ||
+      ((y + 8 * size - 1) >= _height))
+    return;
+
+  switch (Gl_options.buffering)
+  {
+  case 0:
+    if (Gl_options.spi_queue)
+      disp_Queue::char_to_queue(x, y, c, color, bg, size);
+    else
+      ST7735::draw_char(x, y, c, color, bg, size);
+    break;
+  case 1:
+    Buffering::char_to_16bit_buff(x, y, c, color, bg, size);
+    break;
+  case 2:
+    Buffering::char_to_8bit_buff(x, y, c, color, bg, size);
+    break;
+  }
+}
+
+void Graphics::writePixel(int16_t x, int16_t y, uint16_t color)
+{
+  switch (Gl_options.buffering)
+  {
+  case 0:
+    if (Gl_options.spi_queue)
+      disp_Queue::pixel_to_queue(x, y, color);
+    else
+      ST7735::draw_pixel(x, y, color);
+    break;
+  case 1:
+    Buffering::pixel_to_16bit_buff(x, y, color);
+    break;
+  case 2:
+    Buffering::pixel_to_8bit_buff(x, y, color);
+    break;
+  }
+}
+
 void Graphics::writeFillRectPreclipped(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 {
   switch (Gl_options.buffering)
   {
   case 0:
-    ST7735_Rect_to_queue(x, y, w, h, color);
+    if (Gl_options.spi_queue)
+      disp_Queue::Rect_to_queue(x, y, w, h, color);
+    else
+      ST7735::draw_rect(x, y, w, h, color);
     break;
   case 1:
     Buffering::rect_to_16bit_buff(x, y, w, h, color);
@@ -49,72 +111,36 @@ void Graphics::writeFillRectPreclipped(int16_t x, int16_t y, int16_t w, int16_t 
     break;
   }
 };
-void Graphics::writeFillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
-{
-  if (w && h)
-  { // Nonzero width and height?
-    if (w < 0)
-    {             // If negative width...
-      x += w + 1; //   Move X to left edge
-      w = -w;     //   Use positive width
-    }
-    // Serial.printf("%d\t%d\n", _width, _height);
-    if (x < _width)
-    { // Not off right
-      if (h < 0)
-      {             // If negative height...
-        y += h + 1; //   Move Y to top edge
-        h = -h;     //   Use positive height
-      }
-      if (y < _height)
-      { // Not off bottom
-        int16_t x2 = x + w - 1;
-        if (x2 >= 0)
-        { // Not off left
-          int16_t y2 = y + h - 1;
-          if (y2 >= 0)
-          { // Not off top
-            // Rectangle partly or fully overlaps screen
-            if (x < 0)
-            {
-              x = 0;
-              w = x2 + 1;
-            } // Clip left
-            if (y < 0)
-            {
-              y = 0;
-              h = y2 + 1;
-            } // Clip top
-            if (x2 >= _width)
-            {
-              w = _width - x;
-            } // Clip right
-            if (y2 >= _height)
-            {
-              h = _height - y;
-            } // Clip bottom
-            writeFillRectPreclipped(x, y, w, h, color);
-          }
-        }
-      }
-    }
-  }
-};
-void Graphics::writeRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
-{
-  writeFastHLine(x, y, w, color);
-  writeFastHLine(x, y + h - 1, w, color);
-  writeFastVLine(x, y + 1, h - 2, color);
-  writeFastVLine(x + w - 1, y + 1, h - 2, color);
-};
 
+void Graphics::drawRGBBitmapPreclipped(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *color)
+{
+  switch (Gl_options.buffering)
+  {
+  case 0:
+    if (Gl_options.spi_queue)
+      disp_Queue::buff_to_queue(x, y, w, h, color);
+    else
+      ST7735::draw_buff(x, y, w, h, color);
+    break;
+  case 1:
+    // Buffering::
+    break;
+  case 2:
+
+    break;
+  }
+}
+
+//####
+//####
+//####
+//###################################################################################################################
 void Graphics::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color)
 {
   writeLine(x0, y0, x1, y1, color);
   writeLine(x1, y1, x2, y2, color);
   writeLine(x2, y2, x0, y0, color);
 }
-
 void Graphics::fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color)
 {
 
@@ -314,21 +340,64 @@ void Graphics::writeLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_
   }
 }
 
-void Graphics::writePixel(int16_t x, int16_t y, uint16_t color)
+void Graphics::writeFillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 {
-  switch (Gl_options.buffering)
-  {
-  case 0:
-    ST7735_pixel_to_queue(x, y, color);
-    break;
-  case 1:
-    Buffering::pixel_to_16bit_buff(x, y, color);
-    break;
-  case 2:
-    Buffering::pixel_to_8bit_buff(x, y, color);
-    break;
+  if (w && h)
+  { // Nonzero width and height?
+    if (w < 0)
+    {             // If negative width...
+      x += w + 1; //   Move X to left edge
+      w = -w;     //   Use positive width
+    }
+    // Serial.printf("%d\t%d\n", _width, _height);
+    if (x < _width)
+    { // Not off right
+      if (h < 0)
+      {             // If negative height...
+        y += h + 1; //   Move Y to top edge
+        h = -h;     //   Use positive height
+      }
+      if (y < _height)
+      { // Not off bottom
+        int16_t x2 = x + w - 1;
+        if (x2 >= 0)
+        { // Not off left
+          int16_t y2 = y + h - 1;
+          if (y2 >= 0)
+          { // Not off top
+            // Rectangle partly or fully overlaps screen
+            if (x < 0)
+            {
+              x = 0;
+              w = x2 + 1;
+            } // Clip left
+            if (y < 0)
+            {
+              y = 0;
+              h = y2 + 1;
+            } // Clip top
+            if (x2 >= _width)
+            {
+              w = _width - x;
+            } // Clip right
+            if (y2 >= _height)
+            {
+              h = _height - y;
+            } // Clip bottom
+            writeFillRectPreclipped(x, y, w, h, color);
+          }
+        }
+      }
+    }
   }
-}
+};
+void Graphics::writeRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
+{
+  writeFastHLine(x, y, w, color);
+  writeFastHLine(x, y + h - 1, w, color);
+  writeFastVLine(x, y + 1, h - 2, color);
+  writeFastVLine(x + w - 1, y + 1, h - 2, color);
+};
 
 void Graphics::fillScreen(uint16_t color)
 {
@@ -343,27 +412,6 @@ void Graphics::fillScreen(uint16_t color)
   else
     writeFillRectPreclipped(0, 0, _width, _height, color);
 }
-
-uint16_t Graphics::color565(uint8_t red, uint8_t green, uint8_t blue)
-{
-  // return  (MAP(red, 0, 255, 0, 31) << 11)|(MAP(green, 0, 255, 0, 63) << 5)|(MAP(blue, 0, 255, 0, 31));//slower
-  return ((red & 0xF8) << 8) | ((green & 0xFC) << 3) | (blue >> 3); // faster
-}
-
-uint8_t Graphics::color565_to_gray8(uint16_t c)
-{
-  Color565 color;
-  color.RGB = c;
-  return (((color.R << 1) + color.G + (color.B << 1)) / 3) * 4;
-};
-uint16_t Graphics::gray8_to_color565(uint8_t gray)
-{
-  Color565 color;
-  color.R = gray >> 3;
-  color.G = gray >> 2;
-  color.B = gray >> 3;
-  return color.RGB;
-};
 
 void Graphics::drawImage565(int16_t x, int16_t y, Image565 *image)
 {
@@ -387,53 +435,50 @@ void Graphics::drawImage565(int16_t x, int16_t y, Image565 *image)
     if (x >= 0)
       x = 0;
     for (uint8_t i = 0; i < w; i++)
-      ST7735_buff_to_queue(x0 + i, y0, 1, h, image->ram_ptr + image->height * i - image->height * x);
+      drawRGBBitmapPreclipped(x0 + i, y0, 1, h, image->ram_ptr + image->height * i - image->height * x);
   }
   else if ((y < 0))
   {
     if (x >= 0)
       x = 0;
     for (uint8_t i = 0; i < w; i++)
-      ST7735_buff_to_queue(x0 + i, y0, 1, h, image->ram_ptr + image->height * i - image->height * x - y);
+      drawRGBBitmapPreclipped(x0 + i, y0, 1, h, image->ram_ptr + image->height * i - image->height * x - y);
   }
   else
   {
-    ST7735_buff_to_queue(x0, y0, w, image->height, image->ram_ptr - image->height * x);
+    drawRGBBitmapPreclipped(x0, y0, w, image->height, image->ram_ptr - image->height * x);
   }
 }
 
-void Graphics::invertDisplay(bool i)
+//####
+//####
+//####
+//###################################################################################################################
+uint16_t Graphics::color565(uint8_t red, uint8_t green, uint8_t blue)
 {
-  ST7735_invertDisplay(i);
+  // return  (MAP(red, 0, 255, 0, 31) << 11)|(MAP(green, 0, 255, 0, 63) << 5)|(MAP(blue, 0, 255, 0, 31));//slower
+  return ((red & 0xF8) << 8) | ((green & 0xFC) << 3) | (blue >> 3); // faster
 }
 
-void Graphics::setRotation(uint8_t m)
+uint8_t Graphics::color565_to_gray8(uint16_t c)
 {
-  rotation = m;
-  ST7735_setRotation(rotation);
-}
+  Color565 color;
+  color.RGB = c;
+  return (((color.R << 1) + color.G + (color.B << 1)) / 3) * 4;
+};
 
-void Graphics::drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size)
+uint16_t Graphics::gray8_to_color565(uint8_t gray)
 {
-  if ((x < 0) ||
-      (y < 0) ||
-      ((x + 6 * size - 1) >= _width) ||
-      ((y + 8 * size - 1) >= _height))
-    return;
-
-  switch (Gl_options.buffering)
-  {
-  case 0:
-    ST7735_char_to_queue(x, y, c, color, bg, size);
-    break;
-  case 1:
-    Buffering::char_to_16bit_buff(x, y, c, color, bg, size);
-    break;
-  case 2:
-    Buffering::char_to_8bit_buff(x, y, c, color, bg, size);
-    break;
-  }
-}
+  Color565 color;
+  color.R = gray >> 3;
+  color.G = gray >> 2;
+  color.B = gray >> 3;
+  return color.RGB;
+};
+//####
+//####
+//####
+//###################################################################################################################
 void Graphics::write(uint8_t c)
 {
   switch (c)
@@ -495,9 +540,7 @@ void Graphics::write(uint8_t c)
 void Graphics::print(const char *str)
 {
   for (uint8_t i = 0; i < strlen(str); i++)
-  {
     write(str[i]);
-  }
 }
 
 void Graphics::printS(int32_t num, uint8_t amount)
@@ -526,9 +569,7 @@ void Graphics::printS(int32_t num, uint8_t amount)
   {
 
     if (flag && (str[i] == 0))
-    {
       counter++;
-    }
     else
     {
       flag = 0;
@@ -543,9 +584,7 @@ void Graphics::printS(int32_t num, uint8_t amount)
     drawChar(cursor_x, cursor_y, ' ', textcolor, textbgcolor, textsize);
     cursor_x += textsize * 6;
     if (cursor_x + textsize * 6 > _width)
-    {
       break;
-    }
   }
 }
 void Graphics::printU(uint32_t num, uint8_t amount)
@@ -567,9 +606,7 @@ void Graphics::printU(uint32_t num, uint8_t amount)
   {
 
     if (flag && (str[i] == 0))
-    {
       counter++;
-    }
     else
     {
       flag = 0;
@@ -584,9 +621,7 @@ void Graphics::printU(uint32_t num, uint8_t amount)
     drawChar(cursor_x, cursor_y, ' ', textcolor, textbgcolor, textsize);
     cursor_x += textsize * 6;
     if (cursor_x + textsize * 6 > _width)
-    {
       break;
-    }
   }
 }
 
@@ -627,9 +662,7 @@ void Graphics::print(float numm, uint8_t integer, uint8_t fractional)
   for (int8_t i = integer - 1; i > 0; i--)
   {
     if (flag && (str[i] == 0))
-    {
       counter++;
-    }
     else
     {
       flag = 0;
@@ -660,9 +693,7 @@ void Graphics::print(float numm, uint8_t integer, uint8_t fractional)
     drawChar(cursor_x, cursor_y, ' ', textcolor, textbgcolor, textsize);
     cursor_x += textsize * 6;
     if (cursor_x + textsize * 6 > _width)
-    {
       break;
-    }
   }
 }
 
@@ -675,9 +706,7 @@ void Graphics::printHex(uint32_t num, uint8_t amount)
     str[i] = (h < 10) ? (48 + h) : (65 + h - 10);
   }
   for (int8_t i = amount - 1; i >= 0; i--)
-  {
     write(str[i]);
-  }
 }
 
 void Graphics::printBin(uint32_t num, uint8_t amount)
@@ -691,9 +720,7 @@ void Graphics::printBin(uint32_t num, uint8_t amount)
     str[i] = 48 + (num & 1);
   }
   for (int8_t i = amount - 1; i >= 0; i--)
-  {
     write(str[i]);
-  }
 }
 
 void Graphics::printR(int32_t num, uint8_t amount)
@@ -721,9 +748,7 @@ void Graphics::printR(int32_t num, uint8_t amount)
   for (int8_t i = amount - 1; i > 0; i--)
   {
     if (str[i] == 0)
-    {
       counter++;
-    }
     else
       break;
   }
@@ -736,10 +761,9 @@ void Graphics::printR(int32_t num, uint8_t amount)
     write('-');
 
   for (int8_t i = amount - (counter + negative - 1) - 1; i >= 0; i--)
-  {
     write(48 + str[i]);
-    // Serial.printf("%c",48+str[i]);
-  } // Serial.printf("\n");
+  // Serial.printf("%c",48+str[i]);
+  // Serial.printf("\n");
 }
 
 inline static bool is_num(char c)
@@ -854,7 +878,7 @@ void Graphics::printf(const char *format, ...)
         {
           uint32_t data = va_arg(factor, uint32_t);
           uint8_t amount = str_to_num(str);
-          if (amount == 0) // ���������� ���������� ������
+          if (amount == 0)
             printBin(data);
           else
             printBin(data, amount);
@@ -880,12 +904,11 @@ void Graphics::printf(const char *format, ...)
     else
       write(format[i]);
   }
-  va_end(factor); // ��������� ��������� ����������
+  va_end(factor);
 }
 
 void Graphics::Renderer()
 {
-  // SendBufferr();
   switch (Gl_options.buffering)
   {
   case 0:
@@ -900,8 +923,34 @@ void Graphics::Renderer()
     break;
   }
 }
-
 void Graphics::Clear()
 {
   Buffering::clear_buff();
+}
+
+void Graphics::CriticalEror(const char *string)
+{
+
+  char str[strlen_P(string)];
+  strcpy_P(str, string);
+
+  wait_end_sending();
+  uint8_t a = Gl_options.buffering;
+  Gl_options.buffering = 0;
+  uint8_t b = Gl_options.spi_queue;
+  Gl_options.spi_queue = 0;
+
+  fillScreen(BLUE);
+  setTextSize(1);
+  setTextColor(WHITE, BLUE);
+  setCursor(0, 10);
+  printf(str); // ST7735::draw_rect(0, 0, _width, _height, BLUE);
+
+  Gl_options.buffering = a;
+  Gl_options.spi_queue = b;
+
+  system_restart();
+  while (1)
+  {
+  }
 }
