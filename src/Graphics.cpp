@@ -950,7 +950,10 @@ void Graphics::CriticalEror(const char *string)
   Gl_options.spi_queue = b;
 
   system_restart();
+  yield();
   while (1)
   {
   }
 }
+
+Graphics tft;

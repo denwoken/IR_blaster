@@ -1,10 +1,7 @@
 #include "display_drivers/disp_buffering.h"
-
 #include "display_drivers/driver_ST7735.h"
-extern uint8_t _height;
-extern uint8_t _width;
-
 #include "display_drivers/SPI.h"
+
 extern "C"
 {
 #include <ets_sys.h>
@@ -12,10 +9,9 @@ extern "C"
 #include <osapi.h>
 }
 #include "FlashOptions.h"
-extern Global_options Gl_options;
 
 #include "Graphics.h"
-extern Graphics tft;
+
 #define color_16_to_8(a) Graphics::color565_to_gray8(a)
 #define color_8_to_16(a) Graphics::gray8_to_color565(a)
 //#define color_16_to_8(a) 0b111111 & (a >> 5)

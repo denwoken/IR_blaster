@@ -1,21 +1,20 @@
 
 #include "Arduino.h"
 
+extern "C"
+{
+#include "osapi.h"
+#include "user_interface.h"
+};
+
 #include "display_drivers/driver_ST7735.h"
 #include "Graphics.h"
-#include "user_interface.h"
-Graphics tft;
-
-#include "my_math.h"
 
 #include "Inputs.h"
 #include "Buttons.h"
+
+#include "my_math.h"
 #include "Timer.h"
-extern Button *L_but;
-extern Button *R_but;
-extern Button *B_but;
-extern Button *C_but;
-extern Button *T_but;
 
 #include "Menue/menueItem.h"
 #include "Menue/OptionsItem.h"
@@ -23,44 +22,43 @@ extern Button *T_but;
 
 #include "Pictures.h"
 #include "Image565.h"
-
+#include "LittleFS.h"
 #include "FlashOptions.h"
 
 extern struct menuelist menue;
 
 //#include "LittleFS.h"
-
+#include <umm_malloc/umm_heap_select.h>
+#include <Esp.h>
 void setup()
 {
-  Serial.begin(1000000, SERIAL_8N1, SERIAL_TX_ONLY);
-  Serial.println("-----------");
   pinMode(16, OUTPUT);
   digitalWrite(16, 0);
-  Serial.println("3333");
+
+  Serial.begin(1000000, SERIAL_8N1, SERIAL_TX_ONLY);
+
+  LittleFS.begin();
+
   init_global_options();
-  Serial.println("33");
   tft.init();
-  Serial.println("333");
   apply_system_settings();
-  Serial.println("3333");
   tft.fillScreen(0);
-  Serial.println("3333");
-  //  Image565 image = Image565(image_Win1, 128, 156);
-  //  image.AllocRAM();
-  //  image.LoadfromCASH();
-  //  for(uint8_t i = 0;i<32;i++){
-  //    tft.drawImage565(0,2,&image);
-  //    image.BrightnessDec();
-  //    delay(40);
-  //  }
-  //
-  //  image.FreeRAM();
+
   init_inputs();
-  Serial.println("3333");
   init_HwTimer();
-  Serial.println("33333");
   init_menue();
-  Serial.println("33333");
+
+  // delay(5000);
+  //   Image565 image = Image565(image_Win1, 128, 156);
+  //   image.AllocRAM();
+  //   image.LoadfromCASH();
+  //   for(uint8_t i = 0;i<32;i++){
+  //     tft.drawImage565(0,2,&image);
+  //     image.BrightnessDec();
+  //     delay(40);
+  //   }
+  //
+  //   image.FreeRAM();
 }
 uint32_t time1 = 0;
 uint64_t summ = 0;

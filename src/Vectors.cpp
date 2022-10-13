@@ -2,9 +2,8 @@
 #include "Arduino.h"
 //#define cos
 //#define sin
-#include "display_drivers/driver_ST7735.h"
-extern uint8_t _width;
-extern uint8_t _height;
+//#include "display_drivers/driver_ST7735.h"
+#include "Graphics.h"
 
 void RotateY(Point3D *point3D, float fi)
 {

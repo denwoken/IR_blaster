@@ -1,0 +1,42 @@
+#pragma once
+#include "Arduino.h"
+#include "LittleFS.h"
+/*
+class StlModel
+{
+    uint32_t vertexCount, edgeCount, triangleCount;
+
+    const float *vertices[3];
+    const float *triangleNormals[3];
+    uint16_t *tvertices[3];
+    uint8_t *tTriNormals[3];
+    const uint16_t *triangles[3];
+    const uint16_t *edges[2];
+
+    StlModel(const char *path)
+    {
+        File f = LittleFS.open(path, "r");
+        if (!f)
+            return;
+
+        uint8_t header[80];
+        f.read(header, 80);
+        f.read((uint8_t *)&triangleCount, 4);
+
+        uint16_t *triangles = os_malloc(triangleCount * 3);
+        while (f.available())
+        {
+
+            float normal[3];
+            float vertexes[3][3];
+            uint16_t Attribute;
+            f.read((uint8_t *)normal, 3 * 4);
+            f.read((uint8_t *)vertexes[0], 3 * 4);
+            f.read((uint8_t *)vertexes[1], 3 * 4);
+            f.read((uint8_t *)vertexes[2], 3 * 4);
+            f.read((uint8_t *)&Attribute, 2);
+        }
+        f.close();
+    };
+};
+*/

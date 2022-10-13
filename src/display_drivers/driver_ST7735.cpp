@@ -1,5 +1,4 @@
 
-#include "display_drivers/driver_ST7735.h"
 
 #include "Arduino.h"
 
@@ -10,6 +9,7 @@ extern "C"
 #include <osapi.h>
 }
 
+#include "display_drivers/driver_ST7735.h"
 #include "display_drivers/SPI.h"
 #include "display_drivers/disp_buffering.h"
 #include "display_drivers/disp_Queue.h"
@@ -18,7 +18,6 @@ uint8_t _height = ST7735_TFTHEIGHT_160;
 uint8_t _width = ST7735_TFTWIDTH_128;
 
 #include "FlashOptions.h"
-extern Global_options Gl_options;
 
 using namespace ST7735;
 

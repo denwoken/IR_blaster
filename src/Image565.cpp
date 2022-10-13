@@ -17,8 +17,6 @@ extern "C"
 #include "display_drivers/driver_ST7735.h"
 #include "Graphics.h"
 //#include "Timer.h"
-extern uint8_t _width;
-extern uint8_t _height;
 
 Image565::Image565(uint16_t *ptr, uint8_t w, uint8_t h)
 {

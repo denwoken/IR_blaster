@@ -4,26 +4,18 @@
 
 extern "C"
 {
-#include "eagle_soc.h"
+//#include "eagle_soc.h"
 //#include "gpio.h"
 #include "osapi.h"
-#include <ets_sys.h>
+//#include <ets_sys.h>
 #include "user_interface.h"
 };
 
 #include "Inputs.h"
 #include "Buttons.h"
-extern Button *L_but;
-extern Button *R_but;
-extern Button *B_but;
-extern Button *C_but;
-extern Button *T_but;
-extern uint8_t _width;
-extern uint8_t _height;
 
 #include "Graphics.h"
 #include "Timer.h"
-extern Graphics tft;
 
 menueItem::menueItem()
 {
@@ -53,16 +45,16 @@ void menueItem::Add(menueItem *a)
 	a->seq_num = context.len - 1;
 };
 
-void menueItem::SetTitle(const char *string, uint16_t col)
+void menueItem::SetTitle(const char *str, uint16_t col)
 {
-	char str[strlen_P(string)];
-	strcpy_P(str, string);
+	// char str[strlen_P(string)];
+	// strcpy_P(str, string);
 
 	if (title.name != NULL)
 		os_free(title.name);
-	title.len = strlen(str);
+	title.len = strlen_P(str);
 	title.name = (char *)os_malloc(title.len + 1);
-	os_memcpy(title.name, str, title.len + 1);
+	memcpy_P(title.name, str, title.len + 1);
 	title.color = col;
 };
 

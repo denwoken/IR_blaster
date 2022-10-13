@@ -1,8 +1,6 @@
 
 
 #include "display_drivers/SPI.h"
-//#include "HardwareSerial.h"
-//#include "Adafruit_ST77xx.h"
 
 static void setClockDivider(uint32_t clockDiv);
 

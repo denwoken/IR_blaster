@@ -13,19 +13,11 @@ extern "C"
 
 #include "my_math.h"
 #include "Graphics.h"
-extern Graphics tft;
-extern uint8_t _width;
-extern uint8_t _height;
 
 #include "FlashOptions.h"
-extern Global_options Gl_options;
 
+#include "Inputs.h"
 #include "Buttons.h"
-extern Button *L_but;
-extern Button *R_but;
-extern Button *B_but;
-extern Button *T_but;
-extern Button *C_but;
 
 // update at screen static values (rarely updated)
 void forcedQuickUpdate()
@@ -37,13 +29,28 @@ void forcedQuickUpdate()
 
 // update_*** -> updating the values
 // draw_*** -> sending data to display
-
-static uint32_t free_heap_size;
+#include <umm_malloc/umm_heap_select.h>
+static uint32_t free_heap_size_IRAM;
+static uint32_t free_heap_size_DRAM;
 void update_heap()
 {
 	if (Gl_options.show_heap)
 	{
-		free_heap_size = system_get_free_heap_size();
+		{
+			HeapSelectIram ephemeral;
+			free_heap_size_IRAM = system_get_free_heap_size();
+		}
+		free_heap_size_DRAM = system_get_free_heap_size();
+
+		// HeapSelectDram ephemeral;
+		// Serial.print(F("Free DRAM "));
+		// Serial.print(ESP.getFreeHeap());
+
+		// {
+		// 	HeapSelectIram ephemeral;
+		// 	Serial.print(F("Free IRAM "));
+		// 	Serial.print(ESP.getFreeHeap());
+		// }
 	}
 }
 void draw_heap()
@@ -52,9 +59,8 @@ void draw_heap()
 	{
 		tft.setTextSize(1);
 		tft.setTextColor(WHITE, BLACK);
-		tft.setCursor(32, _height - 8);
-		tft.print("free heap:");
-		tft.printU(free_heap_size);
+		tft.setCursor(0, _height - 8);
+		tft.printf("free heap:%5ud/%5ud", free_heap_size_IRAM, free_heap_size_DRAM);
 	}
 }
 
@@ -121,6 +127,7 @@ void draw_battery()
 void update_1sec()
 {
 	system_soft_wdt_feed();
+	Serial.println(fps);
 };
 
 // soft timer, every >=100 milliseconds

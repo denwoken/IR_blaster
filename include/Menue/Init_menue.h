@@ -44,3 +44,4 @@ struct menuelist
     menueItem *ASCII_2_S_Test;
     menueItem *WIFI;
 };
+extern menuelist menue;

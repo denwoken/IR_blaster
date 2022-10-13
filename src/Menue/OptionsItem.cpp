@@ -13,22 +13,12 @@ extern "C"
 
 #include "Inputs.h"
 #include "Buttons.h"
-extern Button *L_but;
-extern Button *R_but;
-extern Button *B_but;
-extern Button *C_but;
-extern Button *T_but;
-
-extern uint8_t _width;
-extern uint8_t _height;
 
 #include "Graphics.h"
-extern Graphics tft;
 
 #include "Timer.h"
 
 #include "FlashOptions.h"
-extern Global_options Gl_options;
 
 #include "Menue/menueItem.h"
 #include "Menue/OptionsItem.h"

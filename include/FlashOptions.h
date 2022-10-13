@@ -3,12 +3,6 @@
 
 typedef struct Global_options
 {
-	/*struct {
-		unsigned int show_fps : 1;
-		unsigned int show_heap : 1;
-		unsigned int buffering : 2;
-		unsigned int spi_queue : 1;
-	};*/
 	int show_fps;
 	int show_heap;
 	int buffering;
@@ -28,3 +22,5 @@ void load_settings();
 void save_settings();
 void draw_settings();
 void apply_system_settings();
+
+extern Global_options Gl_options;

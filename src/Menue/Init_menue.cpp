@@ -1,5 +1,9 @@
+
 #include "Arduino.h"
+
 #include "Apps/Gamma&Tests.h"
+#include "Apps/Flash_apps.h"
+#include "Apps/Vertex_Graphics_apps.h"
 
 extern "C"
 {
@@ -9,22 +13,20 @@ extern "C"
 #include "user_interface.h"
 };
 
-#include "Apps/Flash_apps.h"
 #include "Menue/Init_menue.h"
-#include "FlashOptions.h"
-#include "Apps/Vertex_Graphics_apps.h"
+#include "Menue/OptionsItem.h"
+#include "Menue/MenueItem.h"
 
 #include "FlashOptions.h"
-extern Global_options Gl_options;
 
 menuelist menue;
 
 void init_menue()
 {
 
-  Serial.printf("menues :%d \n", (sizeof(menue) / sizeof(menueItem *)));
-  Serial.printf("mem_menue :%d \n", (sizeof(menue) / sizeof(menueItem *)) * sizeof(menueItem));
-  Serial.printf("heap :%d \n", system_get_free_heap_size());
+  // Serial.printf("menues :%d \n", (sizeof(menue) / sizeof(menueItem *)));
+  // Serial.printf("mem_menue :%d \n", (sizeof(menue) / sizeof(menueItem *)) * sizeof(menueItem));
+  // Serial.printf("heap :%d \n", system_get_free_heap_size());
 
   {
 

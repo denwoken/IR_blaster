@@ -6,9 +6,6 @@
 #include "display_drivers/disp_buffering.h"
 #include "display_drivers/SPI.h"
 
-extern uint8_t _height;
-extern uint8_t _width;
-
 #include "glcdfont.c"
 
 extern "C"

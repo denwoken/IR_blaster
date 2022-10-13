@@ -10,11 +10,12 @@ extern "C"
 
 #include "my_math.h"
 #include "Apps/Gamma&Tests.h"
+
 #include "display_drivers/driver_ST7735.h"
 #include "Graphics.h"
+
 #include "Inputs.h"
 #include "Buttons.h"
-extern Graphics tft;
 
 #include "display_drivers/disp_buffering.h"
 #include "display_drivers/disp_Queue.h"
@@ -27,7 +28,6 @@ static const uint16_t len = align_32(sizeof(Global_options) + 1);
 void set_def_settings()
 {
   // default settings
-
   Gl_options.show_fps = 1;
   Gl_options.show_heap = 1;
   Gl_options.buffering = 1; //

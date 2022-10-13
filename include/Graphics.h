@@ -140,3 +140,7 @@ protected:
 
   uint32_t _freq = 10000000;
 };
+
+extern Graphics tft;
+extern uint8_t _width;
+extern uint8_t _height;

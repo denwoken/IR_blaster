@@ -6,7 +6,7 @@
 */
 MEMORY
 {
-  iram1_0_seg : org = 0x40100000, len = 0x8000
+  iram1_0_seg : org = 0x40100000, len = 0xC000
 }
 PHDRS
 {

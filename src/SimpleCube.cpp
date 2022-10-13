@@ -1,11 +1,8 @@
 #include "SimpleCube.h"
 #include "Vectors.h"
 
-#include "display_drivers/driver_ST7735.h"
+//#include "display_drivers/driver_ST7735.h"
 #include "Graphics.h"
-extern Graphics tft;
-extern uint8_t _width;
-extern uint8_t _height;
 
 SimpleCube::SimpleCube(int16_t Size)
 {
