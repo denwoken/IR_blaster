@@ -13,22 +13,13 @@ extern "C"
 
 #include "display_drivers/driver_ST7735.h"
 #include "Graphics.h"
-extern Graphics tft;
-extern uint8_t _width;
-extern uint8_t _height;
 
 #include "Inputs.h"
 #include "Buttons.h"
-extern Button *L_but;
-extern Button *R_but;
-extern Button *B_but;
-extern Button *C_but;
-extern Button *T_but;
 
 #include "Menue/menueItem.h"
 
 #include "FlashOptions.h"
-extern Global_options Gl_options;
 
 const char *flash_mapps[] = {
     "4M_MAP_256_256",

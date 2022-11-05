@@ -10,7 +10,7 @@
 
 using namespace ST7735;
 
-void ST7735::draw_pixel(uint16_t x, uint16_t y, uint16_t color)
+void IRAM_ATTR ST7735::draw_pixel(uint16_t x, uint16_t y, uint16_t color)
 {
     setAddrWindow(x, y, 1, 1);
     setDataBits(16);
@@ -18,7 +18,7 @@ void ST7735::draw_pixel(uint16_t x, uint16_t y, uint16_t color)
     SPI1CMD |= SPIBUSY;
 }
 
-void ST7735::draw_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
+void IRAM_ATTR ST7735::draw_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
 {
     uint16_t lenn = w * h;
     setAddrWindow(x, y, w, h);
@@ -44,7 +44,7 @@ void ST7735::draw_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t 
     }
 }
 
-void ST7735::draw_buff(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t *colors)
+void IRAM_ATTR ST7735::draw_Bitmap(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t *colors)
 {
     uint16_t lenn = w * h;
     setAddrWindow(x, y, w, h);
@@ -77,7 +77,7 @@ void ST7735::draw_buff(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t 
     }
 }
 
-void ST7735::draw_char(uint16_t x, uint16_t y, unsigned char c, uint16_t color, uint16_t bcolor, uint8_t size)
+void IRAM_ATTR ST7735::draw_char(uint16_t x, uint16_t y, unsigned char c, uint16_t color, uint16_t bcolor, uint8_t size)
 {
     setAddrWindow(x, y, 6, 8);
     uint8_t char_m[6];

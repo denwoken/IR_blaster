@@ -8,7 +8,7 @@ typedef struct Title
 {
 	uint8_t coord_x;
 	uint8_t coord_y;
-	char *name;
+	const char *name;
 	uint8_t len;
 	uint16_t color;
 } Title;

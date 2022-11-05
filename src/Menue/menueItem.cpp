@@ -47,14 +47,15 @@ void menueItem::Add(menueItem *a)
 
 void menueItem::SetTitle(const char *str, uint16_t col)
 {
-	// char str[strlen_P(string)];
-	// strcpy_P(str, string);
 
-	if (title.name != NULL)
-		os_free(title.name);
+	// if (title.name != NULL)
+	// 	os_free(title.name);
+	// title.len = strlen_P(str);
+	// title.name = (char *)os_malloc(title.len + 1);
+	// memcpy_P(title.name, str, title.len + 1);
+	// title.color = col;
 	title.len = strlen_P(str);
-	title.name = (char *)os_malloc(title.len + 1);
-	memcpy_P(title.name, str, title.len + 1);
+	title.name = str;
 	title.color = col;
 };
 
@@ -258,7 +259,7 @@ void menueItem::render()
 		tft.write(' ');
 
 	tft.setTextColor(title.color, BLACK);
-	tft.print(const_cast<const char *>(title.name));
+	tft.print(title.name);
 
 	if (GetParentPtr()->context.current == seq_num)
 	{

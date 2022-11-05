@@ -12,11 +12,7 @@
 #include "my_math.h"
 #include "Image565.h"
 
-extern uint8_t _width;
-extern uint8_t _height;
-
 #include "FlashOptions.h"
-extern Global_options Gl_options;
 
 void Graphics::init()
 {
@@ -29,7 +25,7 @@ void Graphics::setSPISpeed(uint32_t freq)
 {
   _freq = freq;
 
-  wait_queue_to_empty();
+  wait_end_sending();
   setFrequency(_freq); // setFrequency(40 * 1000 * 1000);
 };
 
@@ -112,23 +108,78 @@ void Graphics::writeFillRectPreclipped(int16_t x, int16_t y, int16_t w, int16_t 
   }
 };
 
-void Graphics::drawRGBBitmapPreclipped(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *color)
+void Graphics::drawBitmapPreclipped(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t *colors, uint8_t in_flash)
 {
   switch (Gl_options.buffering)
   {
   case 0:
-    if (Gl_options.spi_queue)
-      disp_Queue::buff_to_queue(x, y, w, h, color);
-    else
-      ST7735::draw_buff(x, y, w, h, color);
+    if (in_flash) // data in FLASH
+    {
+      uint16_t len = h * 2;
+      uint16_t *line;
+      if (Gl_options.spi_queue) // data in FLASH and queue is enable
+      {
+        for (uint8_t dw = 0; dw < w; dw++)
+        {
+          do
+          {
+            line = (uint16_t *)os_malloc(len);
+          } while (line == NULL);
+          os_memcpy(line, colors + h * dw, len);
+          disp_Queue::Bitmap_to_queue(x + dw, y, 1, h, line, true);
+        }
+      }
+      else // data in FLASH and queue is disable
+      {
+        for (uint8_t dw = 0; dw < w; dw++)
+        {
+          uint16_t line[h];
+          os_memcpy(line, colors + h * dw, len);
+          ST7735::draw_Bitmap(x + dw, y, 1, h, line);
+        }
+      }
+    }
+    else // data in RAM
+    {
+      if (Gl_options.spi_queue) // data in RAM and queue is enable
+        disp_Queue::Bitmap_to_queue(x, y, w, h, colors, false);
+      else // data in RAM and queue is disable
+        ST7735::draw_Bitmap(x, y, w, h, colors);
+    }
     break;
   case 1:
-    // Buffering::
+    Buffering::Bitmap_to_16bit_buff(x, y, w, h, colors);
     break;
   case 2:
+    if (in_flash) // data in FLASH
+    {
+      for (uint8_t dw = 0; dw < w; dw++)
+      {
+        uint16_t mass[h];
+        os_memcpy(mass, colors + h * dw, 2 * h);
 
+        uint8_t res[h];
+        for (uint8_t y = 0; y < h; y++)
+          res[y] = color565_to_gray8(mass[y]);
+
+        Buffering::Bitmap_to_8bit_buff(x + dw, y, 1, h, (uint16_t *)res);
+      }
+    }
+    else // data in RAM
+      Buffering::Bitmap_to_8bit_buff(x, y, w, h, colors);
     break;
   }
+}
+
+void Graphics::drawImagePreclipped(uint16_t x, uint16_t y, Image565 *image)
+{
+  (image->DataInRam) ? ({ drawBitmapPreclipped(x, y, image->width, image->height, image->Ram_ptr, 0); })
+                     : ({ drawBitmapPreclipped(x, y, image->width, image->height, image->Flash_ptr, 1); });
+}
+
+void Graphics::drawImagePreclipped(uint16_t x, uint16_t y, Image_dataset *image)
+{
+  drawBitmapPreclipped(x, y, image->width, image->height, image->data_Ptr, 1);
 }
 
 //####
@@ -415,16 +466,20 @@ void Graphics::fillScreen(uint16_t color)
 
 void Graphics::drawImage565(int16_t x, int16_t y, Image565 *image)
 {
-  // ST7735_buff_to_queue(x, y, width, height, ram_ptr);
+
   int16_t w, h;
   int16_t x0 = 0, y0 = 0;
+  bool free_flag = !image->DataInRam;
 
   ((x + image->width) > _width) ? (w = _width - x) : (w = image->width);
+
   if (x < 0)
     w += x;
   else
     x0 = x;
+
   ((y + image->height) > _height) ? (h = _height - y) : (h = image->height);
+
   if (y < 0)
     h += y;
   else
@@ -435,18 +490,18 @@ void Graphics::drawImage565(int16_t x, int16_t y, Image565 *image)
     if (x >= 0)
       x = 0;
     for (uint8_t i = 0; i < w; i++)
-      drawRGBBitmapPreclipped(x0 + i, y0, 1, h, image->ram_ptr + image->height * i - image->height * x);
+      drawBitmapPreclipped(x0 + i, y0, 1, h, image->Ram_ptr + image->height * (i - x), 1);
   }
   else if ((y < 0))
   {
     if (x >= 0)
       x = 0;
     for (uint8_t i = 0; i < w; i++)
-      drawRGBBitmapPreclipped(x0 + i, y0, 1, h, image->ram_ptr + image->height * i - image->height * x - y);
+      drawBitmapPreclipped(x0 + i, y0, 1, h, image->Ram_ptr + image->height * (i - x) - y, 1);
   }
   else
   {
-    drawRGBBitmapPreclipped(x0, y0, w, image->height, image->ram_ptr - image->height * x);
+    drawBitmapPreclipped(x0, y0, w, image->height, image->Ram_ptr - image->height * x, 1);
   }
 }
 

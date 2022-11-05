@@ -107,8 +107,8 @@ void ST7735::displayInit(const uint8_t *addr)
 // {
 // }
 
-static inline void SPI_DC_HIGH(void) { GPOS = 1 << 2; }; //_dc
-static inline void SPI_DC_LOW(void) { GPOC = 1 << 2; }   //_dc
+static inline void IRAM_ATTR SPI_DC_HIGH(void) { GPOS = 1 << 2; }; //_dc
+static inline void IRAM_ATTR SPI_DC_LOW(void) { GPOC = 1 << 2; }   //_dc
 
 void ST7735::begin(int8_t dc, uint32_t freq)
 {
@@ -157,7 +157,7 @@ void ST7735::sendCommand16(uint16_t commandWord, const uint8_t *dataBytes, uint8
         write16((uint16_t)pgm_read_byte(dataBytes++));
     }
 }
-void ST7735::writeCommand(uint8_t cmd)
+void IRAM_ATTR ST7735::writeCommand(uint8_t cmd)
 {
     // wait_queue_to_empty(); // wait for the queue to empty
     // wait_end_sending(); // wait for the queue to empty && stop buffer sending
@@ -214,7 +214,7 @@ void ST7735::setRotation(uint8_t m)
     sendCommand(ST77XX_MADCTL, &madctl, 1);
 }
 
-void ST7735::setAddrWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
+void IRAM_ATTR ST7735::setAddrWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
 {
     writeCommand(ST77XX_CASET); // Column addr set
     write32(ST7735_setAddr(y, h));

@@ -18,7 +18,7 @@ extern "C"
 #include "Menue/MenueItem.h"
 
 #include "FlashOptions.h"
-
+#include <umm_malloc/umm_heap_select.h>
 menuelist menue;
 
 void init_menue()
@@ -29,8 +29,8 @@ void init_menue()
   // Serial.printf("heap :%d \n", system_get_free_heap_size());
 
   {
-
-    menue.main = new menueItem();
+    HeapSelectIram ephemeral;     // in iram
+    menue.main = new menueItem(); //(menueItem *)malloc(sizeof(menueItem));
     menue.Options = new menueItem();
     menue.buffering = new OptionsItem();
     menue.SPI_speed = new OptionsItem();

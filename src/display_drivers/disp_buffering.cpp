@@ -12,11 +12,6 @@ extern "C"
 
 #include "Graphics.h"
 
-#define color_16_to_8(a) Graphics::color565_to_gray8(a)
-#define color_8_to_16(a) Graphics::gray8_to_color565(a)
-//#define color_16_to_8(a) 0b111111 & (a >> 5)
-//#define color_8_to_16(a) (a << 5)
-
 // using namespace Buffering;
 
 void *buff_ptr_0 = NULL;
@@ -34,8 +29,8 @@ static void IRAM_ATTR double_buff_spi_intr()
     for (uint16_t i = 0; i < 16; i++)
     {
       const uint8_t *offset = (uint8 *)SecondaryBuffer + 2 * i + pixel_num;
-      const uint16_t data0 = color_8_to_16(offset[1]);
-      const uint16_t data1 = color_8_to_16(offset[0]);
+      const uint16_t data0 = Graphics::gray8_to_color565(offset[1]);
+      const uint16_t data1 = Graphics::gray8_to_color565(offset[0]);
       *(&SPI1W0 + i) = data0 | (data1 << 16);
     }
     pixel_num += 32;
@@ -46,7 +41,7 @@ static void IRAM_ATTR double_buff_spi_intr()
   sending_buff = 0;
 }
 
-void Buffering::free_all_buffers()
+void IRAM_ATTR Buffering::free_all_buffers()
 {
   if (buff_ptr_0 != NULL)
     os_free(buff_ptr_0);
@@ -60,7 +55,7 @@ void Buffering::free_all_buffers()
   SecondaryBuffer = NULL;
 }
 
-void Buffering::init_single_buffer()
+void IRAM_ATTR Buffering::init_single_buffer()
 {
   free_all_buffers();
   buff_ptr_0 = os_malloc(_width * _height * 2);
@@ -70,7 +65,7 @@ void Buffering::init_single_buffer()
   os_memset(buff_ptr_0, 0, _width * _height * 2);
   CurrBuffer = buff_ptr_0;
 }
-void Buffering::init_double_buffer()
+void IRAM_ATTR Buffering::init_double_buffer()
 {
   free_all_buffers();
 
@@ -87,14 +82,14 @@ void Buffering::init_double_buffer()
   begin_spi_intr(double_buff_spi_intr);
 }
 
-void Buffering::SwapBuffers()
+void IRAM_ATTR Buffering::SwapBuffers()
 {
   void *a = CurrBuffer;
   CurrBuffer = SecondaryBuffer;
   SecondaryBuffer = a;
 }
 
-void Buffering::Send_single_Bufferr()
+void IRAM_ATTR Buffering::Send_single_Bufferr()
 {
   ST7735::setAddrWindow(0, 0, _width, _height);
   setDataBits(512);
@@ -109,12 +104,12 @@ void Buffering::Send_single_Bufferr()
     WAIT_END_PACK_TRANSFER();
   }
 }
-void Buffering::wait_end_buffer_sending()
+void IRAM_ATTR Buffering::wait_end_buffer_sending()
 {
   while (sending_buff)
     asm volatile("NOP\nNOP\n");
 }
-void Buffering::stop_buffer_sending()
+void IRAM_ATTR Buffering::stop_buffer_sending()
 {
   wait_end_buffer_sending();
   SPI_INTR_DISABLE();
@@ -122,7 +117,7 @@ void Buffering::stop_buffer_sending()
   WAIT_END_PACK_TRANSFER();
 }
 
-void Buffering::Start_sending_double_Bufferr()
+void IRAM_ATTR Buffering::Start_sending_double_Bufferr()
 {
   wait_end_buffer_sending();
 
@@ -134,16 +129,16 @@ void Buffering::Start_sending_double_Bufferr()
   SPI_INTR_ENABLE();
 }
 
-void Buffering::pixel_to_16bit_buff(int16_t x, int16_t y, int16_t color)
+void IRAM_ATTR Buffering::pixel_to_16bit_buff(uint16_t x, uint16_t y, uint16_t color)
 {
   ((uint16 *)CurrBuffer)[x * _height + y] = color;
 }
-void Buffering::pixel_to_8bit_buff(int16_t x, int16_t y, int16_t color)
+void IRAM_ATTR Buffering::pixel_to_8bit_buff(uint16_t x, uint16_t y, uint16_t color)
 {
-  ((uint8 *)CurrBuffer)[x * _height + y] = color_16_to_8(color);
+  ((uint8 *)CurrBuffer)[x * _height + y] = Graphics::color565_to_gray8(color);
 }
 
-void Buffering::clear_buff()
+void IRAM_ATTR Buffering::clear_buff()
 {
   switch (Gl_options.buffering)
   {
@@ -160,7 +155,7 @@ void Buffering::clear_buff()
   }
 }
 
-void Buffering::rect_to_16bit_buff(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t color)
+void IRAM_ATTR Buffering::rect_to_16bit_buff(uint16_t x0, uint16_t y0, uint16_t w, uint16_t h, uint16_t color)
 {
   if (color == 0)
   {
@@ -177,15 +172,15 @@ void Buffering::rect_to_16bit_buff(int16_t x0, int16_t y0, int16_t w, int16_t h,
   }
 }
 
-void Buffering::rect_to_8bit_buff(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t color)
+void IRAM_ATTR Buffering::rect_to_8bit_buff(uint16_t x0, uint16_t y0, uint16_t w, uint16_t h, uint16_t color)
 {
-  uint8_t color_8 = color_16_to_8(color);
+  uint8_t color_8 = Graphics::color565_to_gray8(color);
   for (uint16_t x = x0; x < x0 + w; x++)
     os_memset((uint8 *)CurrBuffer + x * _height + y0, color_8, h);
 }
 
 #include "glcdfont.c"
-void Buffering::char_to_16bit_buff(uint16_t x0, uint16_t y0, char c, uint16_t color, uint16_t bg, uint8_t size)
+void IRAM_ATTR Buffering::char_to_16bit_buff(uint16_t x0, uint16_t y0, char c, uint16_t color, uint16_t bg, uint8_t size)
 {
   uint8_t char_m[6];
   for (uint8_t i = 0; i < 5; i++) // load char to stack
@@ -227,15 +222,15 @@ void Buffering::char_to_16bit_buff(uint16_t x0, uint16_t y0, char c, uint16_t co
   }
 }
 
-void Buffering::char_to_8bit_buff(uint16_t x0, uint16_t y0, char c, uint16_t color, uint16_t bg, uint8_t size)
+void IRAM_ATTR Buffering::char_to_8bit_buff(uint16_t x0, uint16_t y0, char c, uint16_t color, uint16_t bg, uint8_t size)
 {
   uint8_t char_m[6];
   for (uint8_t i = 0; i < 5; i++) // load char to stack
     char_m[i] = (uint8_t)pgm_read_byte(&font[c * 5 + i]);
   char_m[5] = 0;
 
-  uint8_t color_8 = color_16_to_8(color);
-  uint8_t bg_8 = color_16_to_8(bg);
+  uint8_t color_8 = Graphics::color565_to_gray8(color);
+  uint8_t bg_8 = Graphics::color565_to_gray8(bg);
   switch (size)
   {
   case 1:
@@ -269,4 +264,16 @@ void Buffering::char_to_8bit_buff(uint16_t x0, uint16_t y0, char c, uint16_t col
     }
     break;
   }
+}
+
+void IRAM_ATTR Buffering::Bitmap_to_16bit_buff(uint16_t x0, uint16_t y0, uint16_t w, uint16_t h, uint16_t *colors)
+{
+  for (uint8_t dw = 0; dw < w; dw++)
+    os_memcpy((uint16 *)CurrBuffer + _height * (x0 + dw) + y0, (uint16 *)colors + h * dw, h * 2);
+}
+
+void IRAM_ATTR Buffering::Bitmap_to_8bit_buff(uint16_t x0, uint16_t y0, uint16_t w, uint16_t h, uint16_t *colors)
+{
+  for (uint8_t dw = 0; dw < w; dw++)
+    os_memcpy((uint8_t *)CurrBuffer + _height * (x0 + dw) + y0, (uint8_t *)colors + h * dw, h);
 }

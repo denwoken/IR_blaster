@@ -22,6 +22,7 @@ extern "C"
 
 #include "Menue/menueItem.h"
 #include "Menue/OptionsItem.h"
+#include <umm_malloc/umm_heap_select.h>
 
 OptionsItem::~OptionsItem()
 {
@@ -183,11 +184,10 @@ void OptionsItem::render()
 
 void OptionsItem::SetTextContext(const char *str, const char *format, uint8_t c)
 {
-	// char str[strlen_P(str_P)];
-	// strcpy_P(str, str_P);
-	// char str[strlen_P(format_P)];
-	// strcpy_P(str, format_P);
 
+	HeapSelectIram ephemeral;
+
+	// this->format = format;
 	this->format = new char[strlen_P(format) + 1];
 	memcpy_P(this->format, format, strlen_P(format) + 1);
 

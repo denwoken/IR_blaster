@@ -12,25 +12,17 @@ extern "C"
 
 #include "display_drivers/disp_Queue.h"
 #include "display_drivers/driver_ST7735.h"
+#include "display_drivers/disp_Instant.h"
 #include "Graphics.h"
-extern Graphics tft;
-extern uint8_t _width;
-extern uint8_t _height;
 
 #include "Inputs.h"
 #include "Buttons.h"
-extern Button *L_but;
-extern Button *R_but;
-extern Button *B_but;
-extern Button *C_but;
-extern Button *T_but;
 
 #include "Menue/menueItem.h"
 
 #include "Timer.h"
 
 #include "FlashOptions.h"
-extern Global_options Gl_options;
 
 /*
 uint8_t GAMCTRP1[]{
@@ -364,9 +356,55 @@ void ChipInfo_app(menueItem *item, void *ptr)
   tft.setRotation(0);
 }
 
+#include "Image_dataset.h"
 void CharSpeedTest2_app(menueItem *item, void *ptr)
 {
-  CharSpeedTest1_app(item, reinterpret_cast<void *>(1));
+  forcedQuickUpdate();
+
+  Image565 image;
+  image.SetFlashDataset(Mario);
+  // image.AllocDRAM();
+  // image.LoadToRAM();
+
+  int16_t x0 = 0, y0 = 0, dxy = 1;
+  L_but->setIncfreq(50);
+  C_but->setIncfreq(50);
+  R_but->setIncfreq(50);
+  T_but->setIncfreq(50);
+  B_but->setIncfreq(50);
+
+  while (1)
+  {
+    soft_updates();
+    if (C_but->isHolded())
+      break;
+    if (C_but->isClick())
+      dxy++;
+    if (L_but->isClick() || L_but->get_inc())
+      x0 -= dxy;
+    if (R_but->isClick() || R_but->get_inc())
+      x0 += dxy;
+    if (T_but->isClick() || T_but->get_inc())
+      y0 -= dxy;
+    if (B_but->isClick() || B_but->get_inc())
+      y0 += dxy;
+
+    tft.drawImagePreclipped(x0, y0, &image);
+    //  disp_Queue::Bitmap_to_queue(x0, y0, 64, 64, imagine, false);
+
+    tft.setCursor(0, _height - 16);
+    tft.setTextSize(1);
+    tft.setTextColor(WHITE, BLACK);
+    tft.printf("x0=%03d y0=%03d dxy=%1ud", x0, y0, dxy);
+    Serial.printf("L_but->isHolded()=%d R_but->isHolded()=%d L_but->inc_value=%d R_but->inc_value=%d\n", L_but->isHolded(), R_but->isHolded(), L_but->inc_value, R_but->inc_value);
+
+    tft.Renderer();
+    tft.fillScreen(0);
+    tft.Clear();
+  }
+  wait_queue_to_empty();
+
+  // CharSpeedTest1_app(item, reinterpret_cast<void *>(1));
 }
 void CharSpeedTest1_app(menueItem *item, void *ptr)
 {

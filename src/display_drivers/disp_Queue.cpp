@@ -28,7 +28,11 @@ typedef struct spi_command
     uint8_t id = 0; // id_ command
     uint8_t x, y = 0;
     uint8_t w, h = 0;
-    uint8_t char_id = 0;
+    union
+    {
+        uint8_t char_id = 0;
+        uint8_t free_flag;
+    };
     union
     {
         struct
@@ -50,7 +54,7 @@ void IRAM_ATTR intr_spi(void)
     WRITE_PERI_REG(SPI_SLAVE(HSPI_), SPI_TRANS_DONE_EN);
 
     static uint32_t pixel_num_buff_tr = 0;
-    static bool first_trans_flag = 1;
+    static uint8_t first_trans_flag = 1;
     static uint16_t pixels_left = 0;
     static uint8_t char_m[6];
     static uint16_t bcolor, color;
@@ -377,6 +381,28 @@ void IRAM_ATTR intr_spi(void)
     case BUFF_COMM:
     {
         static uint16_t *addr_16_data;
+
+        if (first_trans_flag == 2)
+        {
+            first_trans_flag = 1;
+            if (spi_queue[counter_execute].free_flag)
+                os_free(addr_16_data);
+
+            if (counter_execute == BUFF_SIZE)
+                counter_execute = 0;
+            else
+                counter_execute++;
+            *id_command = 0;
+
+            if (spi_queue[counter_execute].id == NONE)
+            {
+                SPI_INTR_DISABLE();
+                spi_intr_flag = 0;
+            }
+            WRITE_PERI_REG(SPI_SLAVE(HSPI_), SPI_TRANS_DONE_EN | SPI_TRANS_DONE);
+            return;
+        }
+
         if (first_trans_flag)
         {
             SPI_INTR_DISABLE();
@@ -417,7 +443,7 @@ void IRAM_ATTR intr_spi(void)
         }
         else
         {
-            first_trans_flag = 1;
+            first_trans_flag = 2;
             setDataBits(pixels_left * 16);
 
             for (uint16_t i = 0; i < pixels_left / 2; i++)
@@ -429,19 +455,6 @@ void IRAM_ATTR intr_spi(void)
             //     const uint16_t* offset = addr_16_data + size-1 + pixel_num_buff_tr;
             //     *(&SPI1W0 + size/2 - 1) = (*(offset + 1)) | ((*(offset)) << 16);
             // }
-
-            if (counter_execute == BUFF_SIZE)
-                counter_execute = 0;
-            else
-                counter_execute++; //   ��������� �������� ��� counter_execute
-            *id_command = 0;
-
-            if (spi_queue[counter_execute].id == 0)
-            {
-                SPI_INTR_DISABLE();
-                spi_intr_flag = 0;
-            }
-
             SPI1CMD |= SPIBUSY;
         }
     }
@@ -449,7 +462,7 @@ void IRAM_ATTR intr_spi(void)
     }
 }
 
-void disp_Queue::pixel_to_queue(int16_t x, int16_t y, uint16_t color)
+void IRAM_ATTR disp_Queue::pixel_to_queue(int16_t x, int16_t y, uint16_t color)
 {
 
     if (!queue_is_Nempty()) // if queue is empty   transfer data without a queue, because sending one pixel take a little time
@@ -479,7 +492,7 @@ void disp_Queue::pixel_to_queue(int16_t x, int16_t y, uint16_t color)
         counter_add++;
 }
 
-void disp_Queue::Rect_to_queue(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
+void IRAM_ATTR disp_Queue::Rect_to_queue(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 {
 
     if (!queue_is_Nempty()) // if queue is empty   transfer data without a queue (if it take a little time)
@@ -523,7 +536,7 @@ void disp_Queue::Rect_to_queue(int16_t x, int16_t y, int16_t w, int16_t h, uint1
         SPI_INTR_ENABLE();
 }
 
-void disp_Queue::buff_to_queue(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *colors)
+void IRAM_ATTR disp_Queue::Bitmap_to_queue(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *colors, uint8_t free_flag)
 {
     while (spi_queue[counter_add].id != NONE) // expect for a free place in the queue (queue is overfull)
         asm volatile("NOP\n");
@@ -536,6 +549,7 @@ void disp_Queue::buff_to_queue(int16_t x, int16_t y, int16_t w, int16_t h, uint1
     spi_queue[counter_add].w = w;
     spi_queue[counter_add].h = h;
     spi_queue[counter_add].color.ptr = colors;
+    spi_queue[counter_add].free_flag = free_flag;
 
     if (counter_add == BUFF_SIZE)
         counter_add = 0;
@@ -552,7 +566,7 @@ void disp_Queue::buff_to_queue(int16_t x, int16_t y, int16_t w, int16_t h, uint1
         SPI_INTR_ENABLE();
 }
 
-void disp_Queue::char_to_queue(uint16_t x, uint16_t y, unsigned char c, uint16_t color, uint16_t bcolor, uint8_t size)
+void IRAM_ATTR disp_Queue::char_to_queue(uint16_t x, uint16_t y, unsigned char c, uint16_t color, uint16_t bcolor, uint8_t size)
 {
     while (spi_queue[counter_add].id != NONE) // expect for a free place in the queue (queue is overfull)
         asm volatile("NOP\n");
@@ -593,15 +607,15 @@ void disp_Queue::char_to_queue(uint16_t x, uint16_t y, unsigned char c, uint16_t
         SPI_INTR_ENABLE();
 }
 
-void wait_end_sending()
+void IRAM_ATTR wait_end_sending()
 {
     wait_queue_to_empty();
     Buffering::wait_end_buffer_sending();
 }
 
-bool queue_is_Nempty() { return spi_intr_flag; };
+bool IRAM_ATTR queue_is_Nempty() { return spi_intr_flag; };
 
-void wait_queue_to_empty()
+void IRAM_ATTR wait_queue_to_empty()
 {
     while (spi_intr_flag)
         asm volatile("NOP\nNOP\n");

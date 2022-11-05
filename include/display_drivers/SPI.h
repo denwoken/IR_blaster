@@ -58,12 +58,12 @@ void begin_spi(uint32_t freq);
 void setBitOrder(uint8_t bitOrder);
 void setByteOrder(uint8_t ByteOrder);
 
-void setFrequency(uint32_t freq);
+void IRAM_ATTR setFrequency(uint32_t freq);
 
-void setDataBits(uint16_t bits);
-void write(uint8_t data);
-void write16(uint16_t data);
-void write32(uint32_t data);
+void IRAM_ATTR setDataBits(uint16_t bits);
+void IRAM_ATTR write(uint8_t data);
+void IRAM_ATTR write16(uint16_t data);
+void IRAM_ATTR write32(uint32_t data);
 
 void write2Bytes(uint16_t *dataPtr, uint16_t size);
 void write2Bytes_(uint16_t *dataPtr, uint16_t size);

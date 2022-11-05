@@ -20,16 +20,11 @@ extern "C"
 #include "Menue/OptionsItem.h"
 #include "Menue/Init_menue.h"
 
-#include "Pictures.h"
+#include "Image_dataset.h"
 #include "Image565.h"
 #include "LittleFS.h"
 #include "FlashOptions.h"
 
-extern struct menuelist menue;
-
-//#include "LittleFS.h"
-#include <umm_malloc/umm_heap_select.h>
-#include <Esp.h>
 void setup()
 {
   pinMode(16, OUTPUT);

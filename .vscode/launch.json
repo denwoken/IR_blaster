@@ -12,9 +12,9 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug",
-            "executable": "c:/Users/Den_woken/Documents/PlatformIO/Projects/IR_Blaster/.pio/build/nodemcuv2/firmware.elf",
+            "executable": "c:/Users/maslo/OneDrive/Documents/PlatformIO/IR_Blaster/.pio/build/nodemcuv2/firmware.elf",
             "projectEnvName": "nodemcuv2",
-            "toolchainBinDir": "C:/Users/Den_woken/.platformio/packages/toolchain-xtensa/bin",
+            "toolchainBinDir": "C:/Users/maslo/.platformio/packages/toolchain-xtensa/bin",
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": {
                 "type": "PlatformIO",
@@ -25,18 +25,18 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (skip Pre-Debug)",
-            "executable": "c:/Users/Den_woken/Documents/PlatformIO/Projects/IR_Blaster/.pio/build/nodemcuv2/firmware.elf",
+            "executable": "c:/Users/maslo/OneDrive/Documents/PlatformIO/IR_Blaster/.pio/build/nodemcuv2/firmware.elf",
             "projectEnvName": "nodemcuv2",
-            "toolchainBinDir": "C:/Users/Den_woken/.platformio/packages/toolchain-xtensa/bin",
+            "toolchainBinDir": "C:/Users/maslo/.platformio/packages/toolchain-xtensa/bin",
             "internalConsoleOptions": "openOnSessionStart"
         },
         {
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (without uploading)",
-            "executable": "c:/Users/Den_woken/Documents/PlatformIO/Projects/IR_Blaster/.pio/build/nodemcuv2/firmware.elf",
+            "executable": "c:/Users/maslo/OneDrive/Documents/PlatformIO/IR_Blaster/.pio/build/nodemcuv2/firmware.elf",
             "projectEnvName": "nodemcuv2",
-            "toolchainBinDir": "C:/Users/Den_woken/.platformio/packages/toolchain-xtensa/bin",
+            "toolchainBinDir": "C:/Users/maslo/.platformio/packages/toolchain-xtensa/bin",
             "internalConsoleOptions": "openOnSessionStart",
             "loadMode": "manual"
         }

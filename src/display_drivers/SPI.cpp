@@ -67,18 +67,18 @@ void setByteOrder(uint8_t ByteOrder)
         SPI1U |= (SPIUWRBYO | SPIURDBYO);
 }
 
-void setClockDivider(uint32_t clockDiv)
+void IRAM_ATTR setClockDivider(uint32_t clockDiv)
 {
     SPI1CLK = clockDiv;
     CLEAR_PERI_REG_MASK(PERIPHS_IO_MUX, (1 << 9)); // GPMUX &= ~(1 << 9);
 }
 
-static uint32_t ClkRegToFreq(spiClk_t *reg)
+static uint32_t IRAM_ATTR ClkRegToFreq(spiClk_t *reg)
 {
     return (ESP8266_CLOCK / ((reg->regPre + 1) * (reg->regN + 1)));
 }
 
-void setFrequency(uint32_t freq)
+void IRAM_ATTR setFrequency(uint32_t freq)
 {
     WAIT_END_PACK_TRANSFER();
     static uint32_t lastSetFrequency = 0;
@@ -185,13 +185,13 @@ void setFrequency(uint32_t freq)
     }
 }
 
-void setDataBits(uint16_t bits)
+void IRAM_ATTR setDataBits(uint16_t bits)
 {
     *(uint32_t *)&SPI1U1 = 0;                  //*(uint32_t*)&
     *(uint32_t *)&SPI1U1 = --bits << SPILMOSI; //
 }
 
-void write(uint8_t data)
+void IRAM_ATTR write(uint8_t data)
 {
     WAIT_END_PACK_TRANSFER();
 
@@ -200,7 +200,7 @@ void write(uint8_t data)
     SPI1CMD |= SPIBUSY;
 }
 
-void write16(uint16_t data)
+void IRAM_ATTR write16(uint16_t data)
 {
     WAIT_END_PACK_TRANSFER();
 
@@ -208,7 +208,7 @@ void write16(uint16_t data)
     *ADDR_16BIT_SPI1W0 = data;
     SPI1CMD |= SPIBUSY;
 }
-void write32(uint32_t data)
+void IRAM_ATTR write32(uint32_t data)
 {
     WAIT_END_PACK_TRANSFER();
 

@@ -76,7 +76,7 @@ namespace ST7735
 
 #define ST7735_setAddr(x, w) ((x << 16) | (x + w - 1))
 
-    void setAddrWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+    void IRAM_ATTR setAddrWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 
     void begin(int8_t dc, uint32_t freq);
 
@@ -86,7 +86,7 @@ namespace ST7735
     void sendCommand(uint8_t commandByte, uint8_t *dataBytes, uint8_t numDataBytes);
     void sendCommand(uint8_t commandByte, const uint8_t *dataBytes = NULL, uint8_t numDataBytes = 0);
     void sendCommand16(uint16_t commandWord, const uint8_t *dataBytes = NULL, uint8_t numDataBytes = 0);
-    void writeCommand(uint8_t cmd);
+    void IRAM_ATTR writeCommand(uint8_t cmd);
     void writeCommand16(uint16_t cmd);
 
     void displayInit(const uint8_t *addr);
